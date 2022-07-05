@@ -134,6 +134,7 @@ my (
     $overflowScrollingTouchSupport,
     $paymentRequestSupport,
     $pdfkitPluginSupport,
+    $pdfjsSupport,
     $pictureInPictureAPISupport,
     $pointerLockSupport,
     $publicSuffixListSupport,
@@ -427,6 +428,9 @@ my @features = (
 
     { option => "pdfkit-plugin", desc => "Toggle PDFKit plugin support",
       define => "ENABLE_PDFKIT_PLUGIN", value => \$pdfkitPluginSupport },
+
+    { option => "pdfjs", desc => "Toggle PDFJS",
+      define => "ENABLE_PDFJS", value => \$pdfjsSupport },
 
     { option => "picture-in-picture-api", desc => "Toggle Picture-in-Picture API support",
       define => "ENABLE_PICTURE_IN_PICTURE_API", value => \$pictureInPictureAPISupport },
