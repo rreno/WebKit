@@ -27,3 +27,7 @@ const PDFJSContentScript = {
         PDFViewerApplication.open(data);
     }
 };
+
+window.addEventListener("message", (event) => {
+  console.log(`Got an event: ${event}`);
+}, false);

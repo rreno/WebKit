@@ -183,19 +183,16 @@ void PDFDocument::finishedParsing()
 
 void PDFDocument::sendPDFArrayBuffer()
 {
-    using namespace JSC;
-
     auto* frame = m_iframe->contentFrame();
-    // FIXME: https://bugs.webkit.org/show_bug.cgi?id=236668 - Use postMessage
-    auto openFunction = frame->script().executeScriptIgnoringException("PDFJSContentScript.open"_s).getObject();
+    frame->script().executeScriptIgnoringException("PDFJSContentScript.open"_s);
 
     auto globalObject = this->globalObject();
     auto& vm = globalObject->vm();
 
-    JSLockHolder lock(vm);
-    auto callData = JSC::getCallData(openFunction);
-    ASSERT(callData.type != CallData::Type::None);
-    MarkedArgumentBuffer arguments;
+    JSC::JSLockHolder lock(vm);
+
+    auto* openMessage = JSC::jsNontrivialString(vm, "openPDF"_s);
+
     auto arrayBuffer = loader()->mainResourceData()->tryCreateArrayBuffer();
     if (!arrayBuffer) {
         ASSERT_NOT_REACHED();
@@ -203,10 +200,11 @@ void PDFDocument::sendPDFArrayBuffer()
     }
 
     auto sharingMode = arrayBuffer->sharingMode();
-    arguments.append(JSArrayBuffer::create(vm, globalObject->arrayBufferStructure(sharingMode), WTFMove(arrayBuffer)));
-    ASSERT(!arguments.hasOverflowed());
+    auto* pdfData = JSC::JSArrayBuffer::create(vm, globalObject->arrayBufferStructure(sharingMode), WTFMove(arrayBuffer));
 
-    call(globalObject, openFunction, callData, globalObject, arguments);
+    auto pdfRef = JSC::Strong<JSC::JSObject>(vm, pdfData);
+
+frame->window()->postMessage(*m_iframe->contentDocument()->globalObject(), *this->domWindow(), openMessage, "webkit-pdfjs-viewer://pdfjs"_s, Vector { (JSC::Strong<JSC::JSObject>)(pdfRef) });
 }
 
 void PDFDocument::injectStyleAndContentScript()
