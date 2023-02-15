@@ -4471,7 +4471,7 @@ static bool isGeneratedImage(CSSValueID id)
 #endif
         || id == CSSValueFilter;
 }
-    
+
 static bool isPixelFilterFunction(CSSValueID filterFunction)
 {
     switch (filterFunction) {

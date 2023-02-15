@@ -38,7 +38,6 @@ class BuilderState;
 class CSSImageSetValue final : public CSSValueContainingVector {
 public:
     static Ref<CSSImageSetValue> create(CSSValueListBuilder);
-//   static Ref<CSSImageSetValue> create();
 
     String customCSSText() const;
     bool equals(const CSSImageSetValue& other) const { return itemsEqual(other); }
@@ -47,7 +46,6 @@ public:
 
 private:
     explicit CSSImageSetValue(CSSValueListBuilder);
-//    CSSImageSetValue();
 };
 
 } // namespace WebCore

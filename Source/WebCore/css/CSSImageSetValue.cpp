@@ -45,13 +45,6 @@ CSSImageSetValue::CSSImageSetValue(CSSValueListBuilder builder)
 {
 }
 
-/*
-CSSImageSetValue::CSSImageSetValue(CSSValueListBuilder&& options)
-    : CSSValueContainingVector(ImageSetClass, CommaSeparator, WTFMove(options))
-{
-}
-*/
-
 String CSSImageSetValue::customCSSText() const
 {
     StringBuilder result;
