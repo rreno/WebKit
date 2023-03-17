@@ -40,13 +40,45 @@ using namespace WebCore;
 
 WTF_MAKE_ISO_ALLOCATED_IMPL(ImageBufferShareableMappedIOSurfaceBackend);
 
+static auto nameFromRenderingPurpose(RenderingPurpose purpose)
+{
+    switch (purpose) {
+    case RenderingPurpose::Unspecified:
+        return IOSurface::Name::ImageBufferShareableMapped;
+
+    case RenderingPurpose::Canvas:
+        return IOSurface::Name::Canvas;
+
+    case RenderingPurpose::DOM:
+        return IOSurface::Name::DOM;
+
+    case RenderingPurpose::LayerBacking:
+        return IOSurface::Name::LayerBacking;
+
+    case RenderingPurpose::Snapshot:
+        return IOSurface::Name::Snapshot;
+
+    case RenderingPurpose::ShareableSnapshot:
+        return IOSurface::Name::ShareableSnapshot;
+
+    case RenderingPurpose::ShareableLocalSnapshot:
+        return IOSurface::Name::ShareableLocalSnapshot;
+
+    case RenderingPurpose::MediaPainting:
+        return IOSurface::Name::MediaPainting;
+    }
+
+    return IOSurface::Name::Default;
+
+}
+
 std::unique_ptr<ImageBufferShareableMappedIOSurfaceBackend> ImageBufferShareableMappedIOSurfaceBackend::create(const Parameters& parameters, const ImageBufferCreationContext& creationContext)
 {
     IntSize backendSize = calculateSafeBackendSize(parameters);
     if (backendSize.isEmpty())
         return nullptr;
 
-    auto surface = IOSurface::create(creationContext.surfacePool, backendSize, parameters.colorSpace, IOSurface::formatForPixelFormat(parameters.pixelFormat));
+    auto surface = IOSurface::create(creationContext.surfacePool, backendSize, parameters.colorSpace, nameFromRenderingPurpose(parameters.purpose), IOSurface::formatForPixelFormat(parameters.pixelFormat));
     if (!surface)
         return nullptr;
     if (creationContext.resourceOwner)
