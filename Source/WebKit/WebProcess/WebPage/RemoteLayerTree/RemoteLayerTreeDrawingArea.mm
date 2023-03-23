@@ -56,6 +56,9 @@
 #import <wtf/SetForScope.h>
 #import <wtf/SystemTracing.h>
 
+#import <wtf/StackTrace.h>
+#import <wtf/DataLog.h>
+
 namespace WebKit {
 using namespace WebCore;
 
@@ -298,13 +301,19 @@ void RemoteLayerTreeDrawingArea::setExposedContentRect(const FloatRect& exposedC
 
 void RemoteLayerTreeDrawingArea::startRenderingUpdateTimer()
 {
-    if (m_updateRenderingTimer.isActive())
+    if (m_updateRenderingTimer.isActive()) {
+        WTFLogAlways("RYAN: (RemoteLayerTreeDrawingArea::startRenderingUpdateTimer) timer is active, not resetting.");
         return;
+    }
+    WTFLogAlways("RYAN: (RemoteLayerTreeDrawingArea::startRenderingUpdateTimer) Starting one shot timer..");
+    auto st = WTF::StackTrace::captureStackTrace(6);
+    st->dump(WTF::dataFile());
     m_updateRenderingTimer.startOneShot(0_s);
 }
 
 void RemoteLayerTreeDrawingArea::triggerRenderingUpdate()
 {
+    WTFLogAlways("RYAN: (RemoteLayerTreeDrawingArea::triggerRenderingUpdate) rendering suspended: %d", m_isRenderingSuspended);
     if (m_isRenderingSuspended) {
         m_hasDeferredRenderingUpdate = true;
         return;

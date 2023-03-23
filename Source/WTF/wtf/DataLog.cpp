@@ -34,16 +34,16 @@
 #include <wtf/ProcessID.h>
 #include <mutex>
 
-#define DATA_LOG_TO_FILE 0
+#define DATA_LOG_TO_FILE 1
 
 // Set to 1 to use the temp directory from confstr instead of hardcoded directory.
 // The last component of DATA_LOG_FILENAME will still be used.
-#define DATA_LOG_TO_DARWIN_TEMP_DIR 0
+#define DATA_LOG_TO_DARWIN_TEMP_DIR 1
 
 // Uncomment to force logging to the given file regardless of what the environment variable says.
 // Note that we will append ".<pid>.txt" where <pid> is the PID.
 // This path won't work on Windows, make sure to change to something like C:\\Users\\<more path>\\log.txt.
-#define DATA_LOG_FILENAME "/tmp/WTFLog"
+//#define DATA_LOG_FILENAME "/tmp/WTFLog"
 
 namespace WTF {
 

@@ -519,6 +519,7 @@ bool RenderLayerCompositor::updateCompositingPolicy()
 
     auto currentPolicy = m_compositingPolicy;
     if (page().compositingPolicyOverride()) {
+        WTFLogAlways("RYAN: (RenderLayerCompositor::updateCompositingPolicy) - overriding compositing policy with page's compositing policy. (changed? %d)", currentPolicy != page().compositingPolicyOverride().value());
         m_compositingPolicy = page().compositingPolicyOverride().value();
         return m_compositingPolicy != currentPolicy;
     }
@@ -533,6 +534,7 @@ bool RenderLayerCompositor::updateCompositingPolicy()
     }
 
     m_compositingPolicy = cachedMemoryPolicy == WTF::MemoryUsagePolicy::Unrestricted ? CompositingPolicy::Normal : CompositingPolicy::Conservative;
+    WTFLogAlways("RYAN: (RenderLayerCompositor::updateCompositingPolicy): m_compositingPolicy: %s (changed? %d)", m_compositingPolicy == CompositingPolicy::Conservative ? "Conservative" : "Normal", m_compositingPolicy != currentPolicy);
     return m_compositingPolicy != currentPolicy;
 }
 

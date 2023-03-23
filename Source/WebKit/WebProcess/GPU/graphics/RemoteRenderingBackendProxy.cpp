@@ -42,6 +42,9 @@
 #include <JavaScriptCore/TypedArrayInlines.h>
 #include <wtf/text/TextStream.h>
 
+#include <wtf/StackTrace.h>
+#include <wtf/DataLog.h>
+
 namespace WebKit {
 
 using namespace WebCore;
@@ -139,13 +142,19 @@ RefPtr<ImageBuffer> RemoteRenderingBackendProxy::createImageBuffer(const FloatSi
     RefPtr<ImageBuffer> imageBuffer;
 
     if (renderingMode == RenderingMode::Accelerated) {
+        auto st = StackTrace::captureStackTrace(30);
+        st->dump(WTF::dataFile());
         // Unless DOM rendering is always enabled when any GPU process rendering is enabled,
         // we need to create ImageBuffers for e.g. Canvas that are actually mapped into the
         // Web Content process, so they can be painted into the tiles.
-        if (!WebProcess::singleton().shouldUseRemoteRenderingFor(RenderingPurpose::DOM))
+        if (!WebProcess::singleton().shouldUseRemoteRenderingFor(RenderingPurpose::DOM)) {
+            WTFLogAlways("RYAN: (RemoteRenderingBackendProxy::createImageBuffer): creating AcceleratedImageBufferShareableMappedBackend");
             imageBuffer = RemoteImageBufferProxy::create<AcceleratedImageBufferShareableMappedBackend>(size, resolutionScale, colorSpace, pixelFormat, purpose, *this, avoidBackendSizeCheck);
-        else
+        }
+        else {
+            WTFLogAlways("RYAN: (RemoteRenderingBackendProxy::createImageBuffer): creating AcceleratedImageBufferRemoteBackend");
             imageBuffer = RemoteImageBufferProxy::create<AcceleratedImageBufferRemoteBackend>(size, resolutionScale, colorSpace, pixelFormat, purpose, *this, avoidBackendSizeCheck);
+        }
     }
 
     if (!imageBuffer)
