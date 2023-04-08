@@ -21,6 +21,8 @@
 #pragma once
 
 #include <wtf/RefCounted.h>
+#include <wtf/RefDerefTraits.h>
+#include <wtf/RefTracker.h>
 #include <wtf/WeakPtr.h>
 
 namespace JSC {
@@ -56,6 +58,9 @@ public:
 
     virtual void visitJSFunction(JSC::AbstractSlotVisitor&) { }
     virtual void visitJSFunction(JSC::SlotVisitor&) { }
+    
+    RefTrackingToken trackRef() const { return RefTracker::sharedTracker().trackRef(); }
+    void trackDeref(RefTrackingToken token) const { RefTracker::sharedTracker().trackDeref(token); }
 
     virtual bool isAttribute() const { return false; }
     Type type() const { return m_type; }

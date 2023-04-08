@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Apple Inc. All rights reserved.
+ * Copyright (C) 2023 Apple Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -25,34 +25,31 @@
 
 #pragma once
 
-#include "JSCJSValueInlines.h"
-#include "VM.h"
-#include <wtf/RefTracker.h>
+#include <type_traits>
+#include <wtf/Platform.h>
 
-namespace JSC {
+namespace WTF {
 
-template <typename T, ShouldStrongDestructorGrabLock shouldStrongDestructorGrabLock>
-inline Strong<T, shouldStrongDestructorGrabLock>::Strong(VM& vm, ExternalType value)
-    : Handle<T>(vm.heap.handleSet()->allocate())
-{
-    set(value);
-//    m_token = RefTracker::strongTracker().trackRef();
-}
+class RefTrackingToken {
+    friend class RefTracker;
+public:
+    constexpr RefTrackingToken() : m_value(0) { }
+protected:
+    using ValueType = unsigned;
 
-template <typename T, ShouldStrongDestructorGrabLock shouldStrongDestructorGrabLock>
-inline Strong<T, shouldStrongDestructorGrabLock>::Strong(VM& vm, Handle<T> handle)
-    : Handle<T>(vm.heap.handleSet()->allocate())
-{
-    set(handle.get());
- //   m_token = RefTracker::strongTracker().trackRef();
-}
+    explicit constexpr RefTrackingToken(ValueType v) : m_value(v) { }
 
-template <typename T, ShouldStrongDestructorGrabLock shouldStrongDestructorGrabLock>
-inline void Strong<T, shouldStrongDestructorGrabLock>::set(VM& vm, ExternalType value)
-{
-    if (!slot())
-        setSlot(vm.heap.handleSet()->allocate());
-    set(value);
-}
+    constexpr ValueType value() const { return m_value; }
 
-} // namespace JSC
+    ValueType m_value;
+};
+
+class UntrackedRefToken : public RefTrackingToken {
+public:
+    constexpr UntrackedRefToken() = default;
+};
+
+} // namespace WTF
+
+using WTF::RefTrackingToken;
+using WTF::UntrackedRefToken;

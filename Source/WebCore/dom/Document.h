@@ -424,6 +424,16 @@ public:
         }
     }
 
+    RefTrackingToken trackRef()
+    {
+        return m_refTracker.trackRef(url().string());
+    }
+
+    void trackDeref(RefTrackingToken token)
+    {
+        m_refTracker.trackDeref(token);
+    }
+
     unsigned referencingNodeCount() const { return m_referencingNodeCount; }
 
     void removedLastRef();

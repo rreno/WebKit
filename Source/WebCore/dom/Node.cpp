@@ -122,7 +122,9 @@ struct SameSizeAsNode : public EventTarget {
     uint8_t rareDataWithBitfields[8];
 };
 
+#if !ENABLE(REF_TRACKING)
 static_assert(sizeof(Node) == sizeof(SameSizeAsNode), "Node should stay small");
+#endif
 
 #if DUMP_NODE_STATISTICS
 static HashSet<HashSet<Node>>& liveNodeSet()
@@ -368,13 +370,31 @@ void Node::trackForDebugging()
 {
 #ifndef NDEBUG
     if (shouldIgnoreLeaks)
-        ignoreSet().add(*this);
+        ignoreSet().add(this);
     else
         nodeCounter.increment();
 #endif
 
 #if DUMP_NODE_STATISTICS
     liveNodeSet().add(this);
+#endif
+#if ENABLE(REF_TRACKING)
+//    RefTracker::nodeTracker().trackRef((void*)this);
+#endif
+}
+
+void Node::untrackForDebugging()
+{
+#ifndef NDEBUG
+    if (!ignoreSet().remove(*this))
+        nodeCounter.decrement();
+#endif
+
+#if DUMP_NODE_STATISTICS
+    liveNodeSet().remove(this);
+#endif
+#if ENABLE(REF_TRACKING)
+    // RefTracker::nodeTracker().trackDeref((void*)this);
 #endif
 }
 
@@ -414,14 +434,7 @@ Node::~Node()
 
     InspectorInstrumentation::willDestroyDOMNode(*this);
 
-#ifndef NDEBUG
-    if (!ignoreSet().remove(*this))
-        nodeCounter.decrement();
-#endif
-
-#if DUMP_NODE_STATISTICS
-    liveNodeSet().remove(this);
-#endif
+    untrackForDebugging();
 
     ASSERT(!renderer());
     ASSERT(!parentNode());

@@ -294,10 +294,14 @@ template<typename T> struct AudioNodeConnectionRefDerefTraits {
         if (LIKELY(ptr))
             ptr->decrementConnectionCount();
     }
+
+    static void takeRef(auto&) { }
+    static void adoptRef(auto*) { }
+    static void swapRef(auto&) { }
 };
 
 template<typename T>
-using AudioConnectionRefPtr = RefPtr<T, RawPtrTraits<T>, AudioNodeConnectionRefDerefTraits<T>>;
+using AudioConnectionRefPtr = RefPtr<T, RawPtrTraits<T>, AudioNodeConnectionRefDerefTraits>;
 
 String convertEnumerationToString(AudioNode::NodeType);
 

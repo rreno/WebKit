@@ -39,6 +39,8 @@
 #include <variant>
 #include <wtf/CheckedPtr.h>
 #include <wtf/Forward.h>
+#include <wtf/RefDerefTraits.h>
+#include <wtf/RefTracker.h>
 #include <wtf/IsoMalloc.h>
 #include <wtf/WeakPtr.h>
 
@@ -86,6 +88,9 @@ public:
 
     inline void ref(); // Defined in Node.h.
     inline void deref(); // Defined in Node.h.
+    inline RefTrackingToken trackRef(); // Defined in Node.h
+    inline void trackDeref(RefTrackingToken); // Defined in Node.h
+    inline const RefTracker& refTracker() const; // Defined in Node.h
 
     virtual EventTargetInterface eventTargetInterface() const = 0;
     virtual ScriptExecutionContext* scriptExecutionContext() const = 0;

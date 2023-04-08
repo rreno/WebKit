@@ -28,7 +28,7 @@
 #include "MediaQueryParser.h"
 #include <wtf/IsoMallocInlines.h>
 #include <wtf/text/StringBuilder.h>
-
+int32_t g_addRemoveBalance = 0;
 namespace WebCore {
 
 WTF_MAKE_ISO_ALLOCATED_IMPL(MediaQueryList);
@@ -76,6 +76,7 @@ void MediaQueryList::addListener(RefPtr<EventListener>&& listener)
         return;
 
     addEventListener(eventNames().changeEvent, listener.releaseNonNull(), { });
+    g_addRemoveBalance++;
 }
 
 void MediaQueryList::removeListener(RefPtr<EventListener>&& listener)
@@ -84,6 +85,7 @@ void MediaQueryList::removeListener(RefPtr<EventListener>&& listener)
         return;
 
     removeEventListener(eventNames().changeEvent, *listener, { });
+    g_addRemoveBalance--;
 }
 
 void MediaQueryList::evaluate(MQ::MediaQueryEvaluator& evaluator, MediaQueryMatcher::EventMode eventMode)

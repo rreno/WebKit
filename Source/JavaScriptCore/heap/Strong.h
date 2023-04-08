@@ -30,6 +30,7 @@
 #include "JSLock.h"
 #include "StrongForward.h"
 #include <wtf/Assertions.h>
+#include <wtf/RefTracker.h>
 
 namespace JSC {
 
@@ -47,6 +48,7 @@ public:
     Strong()
         : Handle<T>()
     {
+//        m_token = RefTracker::strongTracker().trackRef();
     }
     
     inline Strong(VM&, ExternalType = ExternalType());
@@ -60,6 +62,7 @@ public:
             return;
         setSlot(HandleSet::heapFor(other.slot())->allocate());
         set(other.get());
+//        m_token = RefTracker::strongTracker().trackRef();
     }
 
     template <typename U> Strong(const Strong<U>& other)
@@ -69,6 +72,7 @@ public:
             return;
         setSlot(HandleSet::heapFor(other.slot())->allocate());
         set(other.get());
+//        m_token = RefTracker::strongTracker().trackRef();
     }
     
     enum HashTableDeletedValueTag { HashTableDeletedValue };
@@ -81,6 +85,7 @@ public:
     ~Strong()
     {
         clear();
+//        RefTracker::strongTracker().trackDeref(m_token);
     }
 
     bool operator!() const { return !slot() || !*slot(); }
@@ -90,6 +95,7 @@ public:
     void swap(Strong& other)
     {
         Handle<T>::swap(other);
+//        std::swap(m_token, other.m_token);
     }
 
     ExternalType get() const { return HandleTypes<T>::getFromSlot(this->slot()); }
@@ -100,10 +106,12 @@ public:
     {
         if (!other.slot()) {
             clear();
+//            m_token = UntrackedRefToken();
             return *this;
         }
 
         set(*HandleSet::heapFor(other.slot())->vm(), other.get());
+//        m_token = RefTracker::strongTracker().trackRef();
         return *this;
     }
     
@@ -111,10 +119,12 @@ public:
     {
         if (!other.slot()) {
             clear();
+//            m_token = UntrackedRefToken();
             return *this;
         }
 
         set(HandleSet::heapFor(other.slot())->vm(), other.get());
+//        m_token = RefTracker::strongTracker().trackRef();
         return *this;
     }
 
@@ -132,6 +142,8 @@ public:
             heap->deallocate(slot());
             setSlot(nullptr);
         }
+
+//        RefTracker::strongTracker().trackDeref(m_token);
     }
 
 private:
@@ -144,6 +156,8 @@ private:
         HandleSet::heapFor(slot())->template writeBarrier<std::is_base_of_v<JSCell, T>>(slot(), value);
         *slot() = value;
     }
+
+//    RefTrackingToken m_token;
 };
 
 template<class T> inline void swap(Strong<T>& a, Strong<T>& b)

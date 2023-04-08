@@ -61,6 +61,9 @@ public:
 
     virtual void doApply() = 0;
 
+    RefTrackingToken trackRef() const { return RefTracker::sharedTracker().trackRef("EditCommand"_s); }
+    void trackDeref(RefTrackingToken token) const { RefTracker::sharedTracker().trackDeref(token); }
+
 protected:
     explicit EditCommand(Document&, EditAction = EditAction::Unspecified);
     EditCommand(Document&, const VisibleSelection&, const VisibleSelection&);

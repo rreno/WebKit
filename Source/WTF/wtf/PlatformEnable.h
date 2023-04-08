@@ -448,6 +448,11 @@
 #endif
 #endif
 
+#if !defined(ENABLE_REF_TRACKING)
+/* Enable Ref and RefPtr accounting for paired ref/deref calls. Useful for finding leaks of reference counted objects. */
+#define ENABLE_REF_TRACKING 1
+#endif
+
 #if !defined(ENABLE_SEPARATED_WX_HEAP)
 #define ENABLE_SEPARATED_WX_HEAP 0
 #endif
