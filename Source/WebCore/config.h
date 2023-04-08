@@ -62,3 +62,5 @@ typedef float CGFloat;
 #define CGFLOAT_DEFINED 1
 #endif
 #endif /* USE(CG) */
+
+extern int32_t g_addRemoveBalance;

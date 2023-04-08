@@ -55,7 +55,7 @@ public:
     static ExceptionOr<Ref<EventSource>> create(ScriptExecutionContext&, const String& url, const Init&);
     virtual ~EventSource();
 
-    const String& url() const;
+    const URL& url() const;
     bool withCredentials() const;
 
     using State = short;
@@ -130,9 +130,9 @@ private:
     String m_eventStreamOrigin;
 };
 
-inline const String& EventSource::url() const
+inline const URL& EventSource::url() const
 {
-    return m_url.string();
+    return m_url;
 }
 
 inline bool EventSource::withCredentials() const

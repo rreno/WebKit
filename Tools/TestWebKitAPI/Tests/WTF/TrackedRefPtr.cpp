@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013-2017 Apple Inc. All rights reserved.
+ * Copyright (C) 2023 Apple Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -22,8 +22,10 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-
+#if 0
 #include "config.h"
+
+#if ENABLE(REF_TRACKING)
 
 #include "RefLogger.h"
 #include "Utilities.h"
@@ -31,104 +33,210 @@
 #include <wtf/NeverDestroyed.h>
 #include <wtf/RefCounted.h>
 #include <wtf/RefPtr.h>
+#include <wtf/RefDerefTraits.h>
+#include <wtf/RefTracker.h>
+#include <wtf/RefTracking.h>
 #include <wtf/RunLoop.h>
 #include <wtf/ThreadSafeRefCounted.h>
 #include <wtf/Threading.h>
 
 namespace TestWebKitAPI {
 
-TEST(WTF_RefPtr, Basic)
-{
-    DerivedRefLogger a("a");
+struct RefTrackingBase : private WTF::RefTrackable<RefTrackingBase> {
+    using RefTrackable<RefTrackingBase>::RefTrackingId;
+};
+} // namespace TestWebKitAPI
 
-    RefPtr<RefLogger> empty;
+namespace WTF {
+template<>
+struct RefDerefTraits<TestWebKitAPI::RefTrackingBase::RefTrackingId> {
+    template <typename T>
+    ALWAYS_INLINE void ref(const T& object)
+    {
+        WTFLogAlways("RefDerefTraits(RefTracking) ref.");
+        m_refTrackingToken = RefTracker::sharedTracker().trackRef();
+        object.ref();
+    }
+
+    template <typename T>
+    ALWAYS_INLINE void refIfNotNull(const T* ptr)
+    {
+        WTFLogAlways("RefDerefTraits(RefTracking) refIfNotNull. %" PRIuPTR " (ptr)", (uintptr_t)ptr);
+        if (UNLIKELY(ptr == nullptr))
+            m_refTrackingToken = UntrackedRefToken();
+
+        m_refTrackingToken = RefTracker::sharedTracker().trackRef();
+        ptr->ref();
+    }
+
+    template <typename T>
+    ALWAYS_INLINE void derefIfNotNull(const T* ptr)
+    {
+        WTFLogAlways("RefDerefTraits(RefTracking) derefIfNotNull.");
+        if (UNLIKELY(ptr == nullptr))
+            return;
+        RefTracker::sharedTracker().trackDeref(std::exchange(m_refTrackingToken, UntrackedRefToken()));
+        ptr->deref();
+    }
+
+    template <typename T>
+    ALWAYS_INLINE void adoptRef(const T* ptr)
+    {
+        WTFLogAlways("RefDerefTraits(RefTracking): adoptRef.");
+        if (UNLIKELY(ptr == nullptr)) {
+            m_refTrackingToken = UntrackedRefToken();
+            return;
+        }
+
+        m_refTrackingToken =  RefTracker::sharedTracker().trackRef();
+    }
+
+    ALWAYS_INLINE void takeRef(WTF::RefTrackingSmartPtr auto& smartPtr)
+    {
+        WTFLogAlways("RefDerefTraits(RefTracking): takeRef (RefTrackingSmartPtr)");
+        m_refTrackingToken = smartPtr.refTrackingToken();
+        smartPtr.setRefTrackingToken(UntrackedRefToken());
+    }
+
+    ALWAYS_INLINE void takeRef(const WTF::SmartPtr auto& smartPtr)
+    {
+        WTFLogAlways("RefDerefTraits(RefTracking): takeRef (SmartPtr)");
+        adoptRef(smartPtr.ptr());
+    }
+
+    ALWAYS_INLINE void swapRef(WTF::RefTrackingSmartPtr auto& smartPtr)
+    {
+        WTFLogAlways("RefDerefTraits(Node RefTracking): swap (RefTrackingSmartPtr)");
+        RefTrackingToken tmp = m_refTrackingToken;
+        m_refTrackingToken = smartPtr.refTrackingToken();
+        smartPtr.setRefTrackingToken(tmp);
+    }
+
+    ALWAYS_INLINE void swapRef(WTF::SmartPtr auto&)
+    {
+        WTFLogAlways("RefDerefTraits(RefTracking): swap (SmartPtr)");
+        m_refTrackingToken = UntrackedRefToken();
+    }
+
+    RefTrackingToken refTrackingToken() const { return m_refTrackingToken; }
+    void setRefTrackingToken(RefTrackingToken token) { m_refTrackingToken = token; }
+
+private:
+    RefTrackingToken m_refTrackingToken;
+};
+} // namespace WTF
+
+namespace TestWebKitAPI {
+namespace {
+struct TrackedRefLogger : public RefLogger, public RefTrackingBase {
+    TrackedRefLogger(const char *name) : RefLogger { name } { }
+};
+} // anonymous namespace
+
+
+TEST(WTF_TrackedRefPtr, Basic)
+{
+    WTFLogAlways("-------- Basic --------");
+    TrackedRefLogger a("a");
+
+    RefPtr<TrackedRefLogger> empty;
     EXPECT_EQ(nullptr, empty.get());
 
     {
-        RefPtr<RefLogger> ptr(&a);
+        RefPtr<TrackedRefLogger> ptr(&a);
         EXPECT_EQ(&a, ptr.get());
         EXPECT_EQ(&a, &*ptr);
         EXPECT_EQ(&a.name, &ptr->name);
     }
     EXPECT_STREQ("ref(a) deref(a) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 
     {
-        RefPtr<RefLogger> ptr = &a;
+        RefPtr<TrackedRefLogger> ptr = &a;
         EXPECT_EQ(&a, ptr.get());
     }
     EXPECT_STREQ("ref(a) deref(a) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 
     {
-        RefPtr<RefLogger> p1 = &a;
-        RefPtr<RefLogger> p2(p1);
+        RefPtr<TrackedRefLogger> p1 = &a;
+        RefPtr<TrackedRefLogger> p2(p1);
         EXPECT_EQ(&a, p1.get());
         EXPECT_EQ(&a, p2.get());
     }
     EXPECT_STREQ("ref(a) ref(a) deref(a) deref(a) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 
     {
-        RefPtr<RefLogger> p1 = &a;
-        RefPtr<RefLogger> p2 = p1;
+        RefPtr<TrackedRefLogger> p1 = &a;
+        RefPtr<TrackedRefLogger> p2 = p1;
         EXPECT_EQ(&a, p1.get());
         EXPECT_EQ(&a, p2.get());
     }
     EXPECT_STREQ("ref(a) ref(a) deref(a) deref(a) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 
     {
-        RefPtr<RefLogger> p1 = &a;
-        RefPtr<RefLogger> p2 = WTFMove(p1);
+        RefPtr<TrackedRefLogger> p1 = &a;
+        RefPtr<TrackedRefLogger> p2 = WTFMove(p1);
         EXPECT_EQ(nullptr, p1.get());
         EXPECT_EQ(&a, p2.get());
     }
     EXPECT_STREQ("ref(a) deref(a) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 
     {
-        RefPtr<RefLogger> p1 = &a;
-        RefPtr<RefLogger> p2(WTFMove(p1));
+        RefPtr<TrackedRefLogger> p1 = &a;
+        RefPtr<TrackedRefLogger> p2(WTFMove(p1));
         EXPECT_EQ(nullptr, p1.get());
         EXPECT_EQ(&a, p2.get());
     }
     EXPECT_STREQ("ref(a) deref(a) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 
     {
-        RefPtr<DerivedRefLogger> p1 = &a;
-        RefPtr<RefLogger> p2 = p1;
+        RefPtr<TrackedRefLogger> p1 = &a;
+        RefPtr<TrackedRefLogger> p2 = p1;
         EXPECT_EQ(&a, p1.get());
         EXPECT_EQ(&a, p2.get());
     }
     EXPECT_STREQ("ref(a) ref(a) deref(a) deref(a) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 
     {
-        RefPtr<DerivedRefLogger> p1 = &a;
-        RefPtr<RefLogger> p2 = WTFMove(p1);
+        RefPtr<TrackedRefLogger> p1 = &a;
+        RefPtr<TrackedRefLogger> p2 = WTFMove(p1);
         EXPECT_EQ(nullptr, p1.get());
         EXPECT_EQ(&a, p2.get());
     }
     EXPECT_STREQ("ref(a) deref(a) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 
     {
-        RefPtr<RefLogger> ptr(&a);
+        RefPtr<TrackedRefLogger> ptr(&a);
         EXPECT_EQ(&a, ptr.get());
         ptr = nullptr;
         EXPECT_EQ(nullptr, ptr.get());
     }
     EXPECT_STREQ("ref(a) deref(a) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 }
 
-TEST(WTF_RefPtr, AssignPassRefToRefPtr)
+TEST(WTF_TrackedRefPtr, AssignPassRefToRefPtr)
 {
-    DerivedRefLogger a("a");
+    TrackedRefLogger a("a");
     {
         Ref<RefLogger> passRef(a);
         RefPtr<RefLogger> ptr = WTFMove(passRef);
         EXPECT_EQ(&a, ptr.get());
     }
     EXPECT_STREQ("ref(a) deref(a) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 }
 
-TEST(WTF_RefPtr, Adopt)
+TEST(WTF_TrackedRefPtr, Adopt)
 {
-    DerivedRefLogger a("a");
+    TrackedRefLogger a("a");
 
     RefPtr<RefLogger> empty;
     EXPECT_EQ(nullptr, empty.get());
@@ -140,20 +248,21 @@ TEST(WTF_RefPtr, Adopt)
         EXPECT_EQ(&a.name, &ptr->name);
     }
     EXPECT_STREQ("deref(a) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 
     {
         RefPtr<RefLogger> ptr = adoptRef(&a);
         EXPECT_EQ(&a, ptr.get());
     }
     EXPECT_STREQ("deref(a) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 }
 
-TEST(WTF_RefPtr, Assignment)
+TEST(WTF_TrackedRefPtr, Assignment)
 {
-    DerivedRefLogger a("a");
+    TrackedRefLogger a("a");
     RefLogger b("b");
-    DerivedRefLogger c("c");
-
+    TrackedRefLogger c("c");
     {
         RefPtr<RefLogger> p1(&a);
         RefPtr<RefLogger> p2(&b);
@@ -166,6 +275,7 @@ TEST(WTF_RefPtr, Assignment)
         log() << "| ";
     }
     EXPECT_STREQ("ref(a) ref(b) | ref(b) deref(a) | deref(b) deref(b) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 
     {
         RefPtr<RefLogger> ptr(&a);
@@ -176,7 +286,7 @@ TEST(WTF_RefPtr, Assignment)
         log() << "| ";
     }
     EXPECT_STREQ("ref(a) | ref(b) deref(a) | deref(b) ", takeLogStr().c_str());
-
+    RefTracker::sharedTracker().showRemainingReferences();
     {
         RefPtr<RefLogger> ptr(&a);
         EXPECT_EQ(&a, ptr.get());
@@ -186,7 +296,7 @@ TEST(WTF_RefPtr, Assignment)
         log() << "| ";
     }
     EXPECT_STREQ("ref(a) | deref(a) | deref(b) ", takeLogStr().c_str());
-
+    RefTracker::sharedTracker().showRemainingReferences();
     {
         RefPtr<RefLogger> ptr(&a);
         EXPECT_EQ(&a, ptr.get());
@@ -194,7 +304,7 @@ TEST(WTF_RefPtr, Assignment)
         EXPECT_EQ(nullptr, ptr.get());
     }
     EXPECT_STREQ("ref(a) deref(a) ", takeLogStr().c_str());
-
+    RefTracker::sharedTracker().showRemainingReferences();
     {
         RefPtr<RefLogger> p1(&a);
         RefPtr<RefLogger> p2(&b);
@@ -207,10 +317,11 @@ TEST(WTF_RefPtr, Assignment)
         log() << "| ";
     }
     EXPECT_STREQ("ref(a) ref(b) | deref(a) | deref(b) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 
     {
         RefPtr<RefLogger> p1(&a);
-        RefPtr<DerivedRefLogger> p2(&c);
+        RefPtr<TrackedRefLogger> p2(&c);
         EXPECT_EQ(&a, p1.get());
         EXPECT_EQ(&c, p2.get());
         log() << "| ";
@@ -220,6 +331,7 @@ TEST(WTF_RefPtr, Assignment)
         log() << "| ";
     }
     EXPECT_STREQ("ref(a) ref(c) | ref(c) deref(a) | deref(c) deref(c) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 
     {
         RefPtr<RefLogger> ptr(&a);
@@ -230,6 +342,7 @@ TEST(WTF_RefPtr, Assignment)
         log() << "| ";
     }
     EXPECT_STREQ("ref(a) | ref(c) deref(a) | deref(c) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 
     {
         RefPtr<RefLogger> ptr(&a);
@@ -240,10 +353,11 @@ TEST(WTF_RefPtr, Assignment)
         log() << "| ";
     }
     EXPECT_STREQ("ref(a) | deref(a) | deref(c) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 
     {
         RefPtr<RefLogger> p1(&a);
-        RefPtr<DerivedRefLogger> p2(&c);
+        RefPtr<TrackedRefLogger> p2(&c);
         EXPECT_EQ(&a, p1.get());
         EXPECT_EQ(&c, p2.get());
         log() << "| ";
@@ -253,6 +367,7 @@ TEST(WTF_RefPtr, Assignment)
         log() << "| ";
     }
     EXPECT_STREQ("ref(a) ref(c) | deref(a) | deref(c) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 
     {
         RefPtr<RefLogger> ptr(&a);
@@ -272,6 +387,7 @@ TEST(WTF_RefPtr, Assignment)
         log() << "| ";
     }
     EXPECT_STREQ("ref(a) | ref(a) deref(a) | deref(a) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 
     {
         RefPtr<RefLogger> ptr(&a);
@@ -282,9 +398,10 @@ TEST(WTF_RefPtr, Assignment)
         EXPECT_EQ(&a, ptr.get());
     }
     EXPECT_STREQ("ref(a) deref(a) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 }
 
-TEST(WTF_RefPtr, Swap)
+TEST(WTF_TrackedRefPtr, Swap)
 {
     RefLogger a("a");
     RefLogger b("b");
@@ -301,6 +418,7 @@ TEST(WTF_RefPtr, Swap)
         log() << "| ";
     }
     EXPECT_STREQ("ref(a) ref(b) | | deref(a) deref(b) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 
     {
         RefPtr<RefLogger> p1(&a);
@@ -314,9 +432,10 @@ TEST(WTF_RefPtr, Swap)
         log() << "| ";
     }
     EXPECT_STREQ("ref(a) ref(b) | | deref(a) deref(b) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 }
 
-TEST(WTF_RefPtr, ReleaseNonNull)
+TEST(WTF_TrackedRefPtr, ReleaseNonNull)
 {
     RefLogger a("a");
 
@@ -326,13 +445,14 @@ TEST(WTF_RefPtr, ReleaseNonNull)
     }
 
     EXPECT_STREQ("ref(a) deref(a) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 }
 
-TEST(WTF_RefPtr, Release)
+TEST(WTF_TrackedRefPtr, Release)
 {
-    DerivedRefLogger a("a");
+    TrackedRefLogger a("a");
     RefLogger b("b");
-    DerivedRefLogger c("c");
+    TrackedRefLogger c("c");
 
     {
         RefPtr<RefLogger> p1 = &a;
@@ -341,6 +461,7 @@ TEST(WTF_RefPtr, Release)
         EXPECT_EQ(&a, p2.get());
     }
     EXPECT_STREQ("ref(a) deref(a) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 
     {
         RefPtr<RefLogger> p1 = &a;
@@ -349,14 +470,16 @@ TEST(WTF_RefPtr, Release)
         EXPECT_EQ(&a, p2.get());
     }
     EXPECT_STREQ("ref(a) deref(a) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 
     {
-        RefPtr<DerivedRefLogger> p1 = &a;
+        RefPtr<TrackedRefLogger> p1 = &a;
         RefPtr<RefLogger> p2 = WTFMove(p1);
         EXPECT_EQ(nullptr, p1.get());
         EXPECT_EQ(&a, p2.get());
     }
     EXPECT_STREQ("ref(a) deref(a) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 
     {
         RefPtr<RefLogger> p1(&a);
@@ -370,10 +493,11 @@ TEST(WTF_RefPtr, Release)
         log() << "| ";
     }
     EXPECT_STREQ("ref(a) ref(b) | deref(a) | deref(b) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 
     {
         RefPtr<RefLogger> p1(&a);
-        RefPtr<DerivedRefLogger> p2(&c);
+        RefPtr<TrackedRefLogger> p2(&c);
         EXPECT_EQ(&a, p1.get());
         EXPECT_EQ(&c, p2.get());
         log() << "| ";
@@ -383,30 +507,36 @@ TEST(WTF_RefPtr, Release)
         log() << "| ";
     }
     EXPECT_STREQ("ref(a) ref(c) | deref(a) | deref(c) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 }
 
+namespace {
 static RefPtr<RefLogger> f1(RefLogger& logger)
 {
     return RefPtr<RefLogger>(&logger);
 }
+}
 
-TEST(WTF_RefPtr, ReturnValue)
+TEST(WTF_TrackedRefPtr, ReturnValue)
 {
-    DerivedRefLogger a("a");
+    TrackedRefLogger a("a");
 
     {
         f1(a);
     }
     EXPECT_STREQ("ref(a) deref(a) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 
     {
         auto ptr = f1(a);
     }
     EXPECT_STREQ("ref(a) deref(a) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 }
 
-struct ConstRefCounted : RefCounted<ConstRefCounted> {
-    static Ref<ConstRefCounted> create() { WTFLogAlways("RefPtr.cpp ConstRefCounted::create"); return adoptRef(*new ConstRefCounted); }
+namespace {
+struct ConstRefCounted : RefCounted<ConstRefCounted>, public RefTrackingBase {
+    static Ref<ConstRefCounted> create() { WTFLogAlways("-------- ConstRefCounted::create (Tracked) --------"); return adoptRef(*new ConstRefCounted); }
 };
 
 static const ConstRefCounted& returnConstRefCountedRef()
@@ -419,10 +549,12 @@ static ConstRefCounted& returnRefCountedRef()
     static NeverDestroyed<Ref<ConstRefCounted>> instance { ConstRefCounted::create() };
     return instance.get().get();
 }
+} // anonymous namespace
 
-TEST(WTF_RefPtr, Const)
+TEST(WTF_TrackedRefPtr, Const)
 {
     // This test passes if it compiles without an error.
+    {
     auto a = ConstRefCounted::create();
     Ref<const ConstRefCounted> b = WTFMove(a);
     RefPtr<const ConstRefCounted> c = b.ptr();
@@ -432,47 +564,49 @@ TEST(WTF_RefPtr, Const)
     RefPtr<const ConstRefCounted> g = f;
     RefPtr<const ConstRefCounted> h(f);
     Ref<const ConstRefCounted> i(returnRefCountedRef());
+    }
+    RefTracker::sharedTracker().showRemainingReferences();
 }
-
-struct RefPtrCheckingRefLogger : RefLogger {
-    RefPtrCheckingRefLogger(const char* name);
-    void ref();
-    void deref();
-    const RefPtr<RefPtrCheckingRefLogger>* slotToCheck { nullptr };
+namespace {
+struct TrackedRefPtrCheckingRefLogger : RefLogger {
+    TrackedRefPtrCheckingRefLogger(const char* name);
+    void ref() const;
+    void deref() const;
+    const RefPtr<TrackedRefPtrCheckingRefLogger>* slotToCheck { nullptr };
 };
 
-RefPtrCheckingRefLogger::RefPtrCheckingRefLogger(const char* name)
-    : RefLogger { name }
+TrackedRefPtrCheckingRefLogger::TrackedRefPtrCheckingRefLogger(const char* name)
+: RefLogger { name }
 {
 }
 
-static const char* loggerName(const RefPtr<RefPtrCheckingRefLogger>& pointer)
+static const char* loggerName(const RefPtr<TrackedRefPtrCheckingRefLogger>& pointer)
 {
     return pointer ? &pointer->name : "null";
 }
 
-void RefPtrCheckingRefLogger::ref()
+void TrackedRefPtrCheckingRefLogger::ref() const
 {
     if (slotToCheck)
         log() << "slot=" << loggerName(*slotToCheck) << " ";
     RefLogger::ref();
 }
 
-void RefPtrCheckingRefLogger::deref()
+void TrackedRefPtrCheckingRefLogger::deref() const
 {
     if (slotToCheck)
         log() << "slot=" << loggerName(*slotToCheck) << " ";
     RefLogger::deref();
 }
-
-TEST(WTF_RefPtr, AssignBeforeDeref)
+} // anonymous namespace
+TEST(WTF_TrackedRefPtr, AssignBeforeDeref)
 {
-    RefPtrCheckingRefLogger a("a");
-    RefPtrCheckingRefLogger b("b");
+    TrackedRefPtrCheckingRefLogger a("a");
+    TrackedRefPtrCheckingRefLogger b("b");
 
     {
-        RefPtr<RefPtrCheckingRefLogger> p1(&a);
-        RefPtr<RefPtrCheckingRefLogger> p2(&b);
+        RefPtr<TrackedRefPtrCheckingRefLogger> p1(&a);
+        RefPtr<TrackedRefPtrCheckingRefLogger> p2(&b);
         EXPECT_EQ(&a, p1.get());
         EXPECT_EQ(&b, p2.get());
         log() << "| ";
@@ -486,9 +620,10 @@ TEST(WTF_RefPtr, AssignBeforeDeref)
         log() << "| ";
     }
     EXPECT_STREQ("ref(a) ref(b) | slot=a ref(b) slot=b deref(a) | deref(b) deref(b) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 
     {
-        RefPtr<RefPtrCheckingRefLogger> ptr(&a);
+        RefPtr<TrackedRefPtrCheckingRefLogger> ptr(&a);
         EXPECT_EQ(&a, ptr.get());
         log() << "| ";
         a.slotToCheck = &ptr;
@@ -500,9 +635,10 @@ TEST(WTF_RefPtr, AssignBeforeDeref)
         log() << "| ";
     }
     EXPECT_STREQ("ref(a) | slot=a ref(b) slot=b deref(a) | deref(b) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 
     {
-        RefPtr<RefPtrCheckingRefLogger> ptr(&a);
+        RefPtr<TrackedRefPtrCheckingRefLogger> ptr(&a);
         EXPECT_EQ(&a, ptr.get());
         a.slotToCheck = &ptr;
         ptr = nullptr;
@@ -510,10 +646,11 @@ TEST(WTF_RefPtr, AssignBeforeDeref)
         EXPECT_EQ(nullptr, ptr.get());
     }
     EXPECT_STREQ("ref(a) slot=null deref(a) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 
     {
-        RefPtr<RefPtrCheckingRefLogger> p1(&a);
-        RefPtr<RefPtrCheckingRefLogger> p2(&b);
+        RefPtr<TrackedRefPtrCheckingRefLogger> p1(&a);
+        RefPtr<TrackedRefPtrCheckingRefLogger> p2(&b);
         EXPECT_EQ(&a, p1.get());
         EXPECT_EQ(&b, p2.get());
         log() << "| ";
@@ -527,30 +664,32 @@ TEST(WTF_RefPtr, AssignBeforeDeref)
         log() << "| ";
     }
     EXPECT_STREQ("ref(a) ref(b) | slot=b deref(a) | deref(b) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 }
 
-TEST(WTF_RefPtr, ReleaseNonNullBeforeDeref)
+TEST(WTF_TrackedRefPtr, ReleaseNonNullBeforeDeref)
 {
-    RefPtrCheckingRefLogger a("a");
+    TrackedRefPtrCheckingRefLogger a("a");
 
     {
-        RefPtr<RefPtrCheckingRefLogger> refPtr = &a;
+        RefPtr<TrackedRefPtrCheckingRefLogger> refPtr = &a;
         a.slotToCheck = &refPtr;
         refPtr.releaseNonNull();
         a.slotToCheck = nullptr;
     }
 
     EXPECT_STREQ("ref(a) slot=null deref(a) ", takeLogStr().c_str());
+    RefTracker::sharedTracker().showRemainingReferences();
 }
 
 // FIXME: Enable these tests once Win platform supports TestWebKitAPI::Util::run
 #if! PLATFORM(WIN)
-
+namespace {
 static bool done;
 static bool isDestroyedInMainThread;
 struct ThreadSafeRefCountedObject : ThreadSafeRefCounted<ThreadSafeRefCountedObject> {
     static Ref<ThreadSafeRefCountedObject> create() { return adoptRef(*new ThreadSafeRefCountedObject); }
-
+    
     ~ThreadSafeRefCountedObject()
     {
         isDestroyedInMainThread = isMainThread();
@@ -560,15 +699,15 @@ struct ThreadSafeRefCountedObject : ThreadSafeRefCounted<ThreadSafeRefCountedObj
 
 struct MainThreadSafeRefCountedObject : ThreadSafeRefCounted<MainThreadSafeRefCountedObject, WTF::DestructionThread::Main> {
     static Ref<MainThreadSafeRefCountedObject> create() { return adoptRef(*new MainThreadSafeRefCountedObject); }
-
+    
     ~MainThreadSafeRefCountedObject()
     {
         isDestroyedInMainThread = isMainThread();
         done = true;
     }
 };
-
-TEST(WTF_RefPtr, ReleaseInNonMainThread)
+} // anonymous namespace
+TEST(WTF_TrackedRefPtr, ReleaseInNonMainThread)
 {
     done = false;
     Thread::create("", [object = ThreadSafeRefCountedObject::create()] { });
@@ -577,7 +716,7 @@ TEST(WTF_RefPtr, ReleaseInNonMainThread)
     EXPECT_FALSE(isDestroyedInMainThread);
 }
 
-TEST(WTF_RefPtr, ReleaseInNonMainThreadDestroyInMainThread)
+TEST(WTF_TrackedRefPtr, ReleaseInNonMainThreadDestroyInMainThread)
 {
     WTF::initializeMainThread();
     done = false;
@@ -587,6 +726,9 @@ TEST(WTF_RefPtr, ReleaseInNonMainThreadDestroyInMainThread)
     EXPECT_TRUE(isDestroyedInMainThread);
 }
 
-#endif
+#endif // !PLATFORM(WIN)
+
+#endif // ENABLE(REF_TRACKING)
 
 } // namespace TestWebKitAPI
+#endif // if 0

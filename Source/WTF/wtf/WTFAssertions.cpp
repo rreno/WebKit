@@ -37,14 +37,14 @@
 namespace WTF {
 
 namespace {
-struct DummyStruct { };
+struct EmptyStruct { };
 }
 
-static_assert(sizeof(Bag<DummyStruct>) == sizeof(void*));
+static_assert(sizeof(Bag<EmptyStruct>) == sizeof(void*));
 
-static_assert(sizeof(Ref<DummyStruct>) == sizeof(DummyStruct*));
+static_assert(sizeof(Ref<EmptyStruct>) == sizeof(EmptyStruct*));
 
-static_assert(sizeof(RefPtr<DummyStruct>) == sizeof(DummyStruct*));
+static_assert(sizeof(RefPtr<EmptyStruct>) == sizeof(EmptyStruct*));
 
 #if OS(DARWIN) && CPU(ADDRESS64)
 // NaN boxing encoding relies on this.

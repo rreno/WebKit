@@ -27,6 +27,7 @@
 
 #include "JSCJSValueInlines.h"
 #include "VM.h"
+#include <wtf/RefTracker.h>
 
 namespace JSC {
 
@@ -35,6 +36,7 @@ inline Strong<T, shouldStrongDestructorGrabLock>::Strong(VM& vm, ExternalType va
     : Handle<T>(vm.heap.handleSet()->allocate())
 {
     set(value);
+    m_token = RefTracker::strongTracker().trackRef();
 }
 
 template <typename T, ShouldStrongDestructorGrabLock shouldStrongDestructorGrabLock>
@@ -42,6 +44,7 @@ inline Strong<T, shouldStrongDestructorGrabLock>::Strong(VM& vm, Handle<T> handl
     : Handle<T>(vm.heap.handleSet()->allocate())
 {
     set(handle.get());
+    m_token = RefTracker::strongTracker().trackRef();
 }
 
 template <typename T, ShouldStrongDestructorGrabLock shouldStrongDestructorGrabLock>

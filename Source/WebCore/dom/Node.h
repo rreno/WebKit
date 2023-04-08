@@ -40,12 +40,14 @@
 #include <wtf/MainThread.h>
 #include <wtf/OptionSet.h>
 #include <wtf/RobinHoodHashSet.h>
+#include <wtf/RefDerefTraits.h>
+#include <wtf/RefTracker.h>
 #include <wtf/URLHash.h>
 #include <wtf/WeakPtr.h>
 
 namespace WTF {
 class TextStream;
-}
+} // namespace WTF
 
 namespace WebCore {
 
@@ -513,6 +515,10 @@ public:
     bool hasOneRef() const;
     unsigned refCount() const;
 
+    virtual RefTrackingToken trackRef() { return m_refTracker.trackRef(); }
+    virtual void trackDeref(RefTrackingToken token) { m_refTracker.trackDeref(token); }
+    const RefTracker& refTracker() const { return m_refTracker; }
+
 #if ASSERT_ENABLED
     bool m_deletionHasBegun { false };
     mutable bool m_inRemovedLastRefFunction { false };
@@ -630,6 +636,9 @@ protected:
     void setIsParsingChildrenFinished() { setNodeFlag(NodeFlag::IsParsingChildrenFinished); }
     void clearIsParsingChildrenFinished() { clearNodeFlag(NodeFlag::IsParsingChildrenFinished); }
 
+#if ENABLE(REF_TRACKING)
+    RefTracker m_refTracker;
+#endif
     constexpr static auto DefaultNodeFlags = OptionSet<NodeFlag>(NodeFlag::IsParsingChildrenFinished);
     constexpr static auto CreateOther = DefaultNodeFlags;
     constexpr static auto CreateCharacterData = DefaultNodeFlags | NodeFlag::IsCharacterData;
@@ -948,6 +957,27 @@ inline void EventTarget::deref()
         downcast<Node>(*this).deref();
     else
         derefEventTarget();
+}
+
+inline RefTrackingToken EventTarget::trackRef()
+{
+    if (LIKELY(isNode()))
+        return downcast<Node>(*this).trackRef();
+    return RefTracker::sharedTracker().trackRef();
+}
+
+inline void EventTarget::trackDeref(RefTrackingToken token)
+{
+    if (LIKELY(isNode()))
+        return downcast<Node>(*this).trackDeref(token);
+    return RefTracker::sharedTracker().trackDeref(token);
+}
+
+inline const RefTracker& EventTarget::refTracker() const
+{
+    if (LIKELY(isNode()))
+        return downcast<Node>(*this).refTracker();
+    return RefTracker::sharedTracker();
 }
 
 WEBCORE_EXPORT WTF::TextStream& operator<<(WTF::TextStream&, const Node&);

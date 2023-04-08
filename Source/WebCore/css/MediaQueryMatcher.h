@@ -60,6 +60,9 @@ public:
     bool evaluate(const MQ::MediaQueryList&);
 
     AtomString mediaType() const;
+    
+    RefTrackingToken trackRef() const { return RefTracker::sharedTracker().trackRef(); }
+    void trackDeref(RefTrackingToken token) const { RefTracker::sharedTracker().trackDeref(token); }
 
 private:
     explicit MediaQueryMatcher(Document&);

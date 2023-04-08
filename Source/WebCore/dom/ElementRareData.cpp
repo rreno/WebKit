@@ -46,6 +46,8 @@ struct SameSizeAsElementRareData : NodeRareData {
     ExplicitlySetAttrElementsMap explicitlySetAttrElementsMap;
 };
 
+#if !ENABLE(REF_TRACKING)
 static_assert(sizeof(ElementRareData) == sizeof(SameSizeAsElementRareData), "ElementRareData should stay small");
+#endif
 
 } // namespace WebCore

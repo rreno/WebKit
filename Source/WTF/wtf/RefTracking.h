@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013-2017 Apple Inc. All rights reserved.
+ * Copyright (C) 2023 Apple Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,29 +23,33 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-#include "RefLogger.h"
+#pragma once
 
-namespace TestWebKitAPI {
+#include <type_traits>
+#include <wtf/Platform.h>
 
-RefLogger::RefLogger(const char* name)
-    : name { *name }
-{
-}
+namespace WTF {
 
-void RefLogger::ref() const
-{
-    log() << "ref(" << &name << ") ";
-}
+class RefTrackingToken {
+    friend class RefTracker;
+public:
+    constexpr RefTrackingToken() : m_value(0) { }
+protected:
+    using ValueType = unsigned;
 
-void RefLogger::deref() const
-{
-    log() << "deref(" << &name << ") ";
-}
+    explicit constexpr RefTrackingToken(ValueType v) : m_value(v) { }
 
-DerivedRefLogger::DerivedRefLogger(const char* name)
-    : RefLogger { name }
-{
-}
+    constexpr ValueType value() const { return m_value; }
 
-}
+    ValueType m_value;
+};
+
+class UntrackedRefToken : public RefTrackingToken {
+public:
+    constexpr UntrackedRefToken() = default;
+};
+
+} // namespace WTF
+
+using WTF::RefTrackingToken;
+using WTF::UntrackedRefToken;
