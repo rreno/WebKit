@@ -99,6 +99,9 @@ void Page::platformInitialize()
             
             WTFLogAlways("------ RefTracking - JSC::Strong tracker -------- ");
             RefTracker::strongTracker().showRemainingReferences();
+            
+            WTFLogAlways("------ RefTracking - Nodes which were constructed but not destroyed -------- ");
+            RefTracker::showRemainingDocReferences();
         });
     });
 }

@@ -638,6 +638,7 @@ protected:
 
 #if ENABLE(REF_TRACKING)
     RefTracker m_refTracker;
+    RefTrackingToken m_refDocToken;
 #endif
     constexpr static auto DefaultNodeFlags = OptionSet<NodeFlag>(NodeFlag::IsParsingChildrenFinished);
     constexpr static auto CreateOther = DefaultNodeFlags;

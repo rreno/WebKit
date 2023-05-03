@@ -28,6 +28,7 @@
 
 #include "ExceptionOr.h"
 #include "FloatPoint.h"
+#include <wtf/RefTracking.h>
 
 namespace WebCore {
 
@@ -45,6 +46,9 @@ public:
     const Gradient& gradient() const { return m_gradient; }
 
     ExceptionOr<void> addColorStop(double value, const String& color);
+    
+    RefTrackingToken trackRef() const;
+    void trackDeref(RefTrackingToken) const;
 
 private:
     CanvasGradient(const FloatPoint& p0, const FloatPoint& p1, CanvasRenderingContext&);

@@ -26,6 +26,7 @@
 #include "config.h"
 #include "RefTracker.h"
 
+#include <wtf/Locker.h>
 #include <wtf/NeverDestroyed.h>
 #include <wtf/RefTracking.h>
 #include <wtf/StackShot.h>
@@ -38,6 +39,12 @@ RefTrackingToken RefTracker::getNextRefToken()
 {
     static RefTrackingToken::ValueType tokenValue{};
     return RefTrackingToken(++tokenValue);
+}
+
+HashMap<RefTrackingToken::ValueType, std::pair<std::pair<void*,void*>, std::unique_ptr<StackShot>>>& RefTracker::docRefBacktraceMap()
+{
+    static NeverDestroyed<HashMap<RefTrackingToken::ValueType, std::pair<std::pair<void*,void*>, std::unique_ptr<StackShot>>>> map;
+    return map.get();
 }
 
 RefTracker& RefTracker::sharedTracker()
@@ -55,12 +62,36 @@ RefTracker& RefTracker::strongTracker()
 RefTracker::RefTracker() = default;
 RefTracker::~RefTracker() = default;
 
-RefTrackingToken RefTracker::trackRef(const String& url)
+RefTrackingToken RefTracker::trackRef(const String& tag)
 {
     auto token = getNextRefToken();
-    m_refBacktraceMap.add(token.value(), std::make_pair(url, std::make_unique<StackShot>(maxStackSize)));
-    //WTFLogAlways("RefTracker: Added token %u (%s)", token.value(), url.utf8().data());
+    m_refBacktraceMap.add(token.value(), std::make_pair(tag, std::make_unique<StackShot>(maxStackSize)));
     return token;
+}
+
+RefTrackingToken RefTracker::trackDocRef(void* document, void* node)
+{
+    static RefTrackingToken::ValueType value { 0 };
+    auto token = RefTrackingToken(++value);
+    RefTracker::docRefBacktraceMap().add(token.value(), std::make_pair(std::make_pair(document, node), std::make_unique<StackShot>(maxStackSize)));
+    return token;
+}
+
+void RefTracker::trackDocDeref(RefTrackingToken token, void* node)
+{
+    if (!token.value())
+        return;
+    
+    auto& map = RefTracker::docRefBacktraceMap();
+    auto it = map.find(token.value());
+    if (it == map.end())
+        return;
+    
+    if (it->value.first.second != node) {
+        WTFLogAlways("RefTracker: trackDocDeref called with a different Node than the one that reffed it.");
+        return;
+    }
+    RefTracker::docRefBacktraceMap().remove(token.value());
 }
 
 void RefTracker::trackDeref(RefTrackingToken token)
@@ -69,33 +100,40 @@ void RefTracker::trackDeref(RefTrackingToken token)
         m_untrackableDerefs.append(std::make_unique<StackShot>(maxStackSize));
         return;
     }
-    
+
     if (!m_refBacktraceMap.remove(token.value()))
         WTFLogAlways("RefTracker: trackDeref passed token %u that was not tracked or already removed.", token.value());
-
-//    WTFLogAlways("RefTracker: Removed token %u", token.value());
 }
 
 void RefTracker::showRemainingReferences() const
 {
     if (m_refBacktraceMap.size() == 0 && m_untrackableDerefs.size() == 0)
         WTFLogAlways("RefTracker: No remaining references.");
-    const size_t framesToSkip = 4;
+    constexpr size_t framesToSkip = 4;
     for (const auto& [token, stack] : m_refBacktraceMap) {
         WTFLogAlways("RefTracker: Backtrace for token %u (%s)\n", token, stack.first.utf8().data());
         WTFPrintBacktrace(stack.second->array() + framesToSkip, stack.second->size() - framesToSkip);
         WTFLogAlways("\n");
     }
-
-#if 0
-    WTFLogAlways("RefTracker: %zu untracked derefs.", m_untrackableDerefs.size());
-#endif
-#if 1
+    
     for (const auto& stack : m_untrackableDerefs) {
         WTFLogAlways("RefTracker: Refs for the following were not tracked:\n:");
         WTFPrintBacktrace(stack->array() + framesToSkip, stack->size() - framesToSkip);
     }
-#endif
+    
+    if (!RefTracker::docRefBacktraceMap().size())
+        return;
+}
+
+void RefTracker::showRemainingDocReferences()
+{
+    constexpr size_t framesToSkip = 4;
+    WTFLogAlways("RefTracker: Nodes which refed a document but did not deref");
+    for (const auto& [token, stack] : RefTracker::docRefBacktraceMap()) {
+        if (!stack.first.first && !stack.first.second) continue;
+        WTFLogAlways("RefTracker: Backtrace for token %u (document %p) (node %p)", token, stack.first.first, stack.first.second);
+        WTFPrintBacktrace(stack.second->array() + framesToSkip, stack.second->size() - framesToSkip);
+    }
 }
 
 void RefTracker::showBacktraceForToken(RefTrackingToken token) const
@@ -114,6 +152,5 @@ void RefTracker::showBacktraceForToken(RefTrackingToken token) const
     WTFPrintBacktrace(it->value.second->array() + framesToSkip, it->value.second->size() - framesToSkip);
     WTFLogAlways("\n");
 }
-
 
 } // namespace WTF

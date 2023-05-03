@@ -30,6 +30,7 @@
 #include "CanvasRenderingContext.h"
 #include "CanvasStyle.h"
 #include "Gradient.h"
+#include <wtf/RefTracker.h>
 
 namespace WebCore {
 
@@ -80,6 +81,16 @@ ExceptionOr<void> CanvasGradient::addColorStop(double value, const String& color
 
     m_gradient->addColorStop({ static_cast<float>(value), WTFMove(color) });
     return { };
+}
+
+RefTrackingToken CanvasGradient::trackRef() const
+{
+    return RefTracker::sharedTracker().trackRef("CanvasGradient"_s);
+}
+
+void CanvasGradient::trackDeref(RefTrackingToken token) const
+{
+    RefTracker::sharedTracker().trackDeref(token);
 }
 
 }

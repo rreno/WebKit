@@ -34,6 +34,7 @@
 #include <wtf/Lock.h>
 #include <wtf/Noncopyable.h>
 #include <wtf/text/StringHash.h>
+#include <wtf/RefTracking.h>
 
 namespace WebCore {
 
@@ -61,6 +62,8 @@ public:
 
     void ref();
     WEBCORE_EXPORT void deref();
+    RefTrackingToken trackRef() const;
+    void trackDeref(RefTrackingToken) const;
 
     CanvasBase& canvasBase() const { return m_canvas; }
 

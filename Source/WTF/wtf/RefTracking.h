@@ -32,6 +32,7 @@ namespace WTF {
 
 class RefTrackingToken {
     friend class RefTracker;
+    friend struct RefTrackingTraits;
 public:
     constexpr RefTrackingToken() : m_value(0) { }
 protected:

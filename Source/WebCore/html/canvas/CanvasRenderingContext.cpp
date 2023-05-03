@@ -44,6 +44,7 @@
 #include <wtf/Lock.h>
 #include <wtf/NeverDestroyed.h>
 #include <wtf/URL.h>
+#include <wtf/RefTracker.h>
 
 namespace WebCore {
 
@@ -84,6 +85,16 @@ void CanvasRenderingContext::ref()
 void CanvasRenderingContext::deref()
 {
     m_canvas.derefCanvasBase();
+}
+
+RefTrackingToken CanvasRenderingContext::trackRef() const
+{
+    return RefTracker::sharedTracker().trackRef("CanvasRenderingContext"_s);
+}
+
+void CanvasRenderingContext::trackDeref(RefTrackingToken token) const
+{
+    RefTracker::sharedTracker().trackDeref(token);
 }
 
 RefPtr<GraphicsLayerContentsDisplayDelegate> CanvasRenderingContext::layerContentsDisplayDelegate()

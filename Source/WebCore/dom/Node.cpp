@@ -397,6 +397,7 @@ Node::Node(Document& document, ConstructionType type)
     ASSERT(isMainThread());
 
     document.incrementReferencingNodeCount();
+    m_refDocToken = RefTracker::trackDocRef(&document, this);
 
 #if !defined(NDEBUG) || DUMP_NODE_STATISTICS
     trackForDebugging();
@@ -426,6 +427,7 @@ Node::~Node()
     ASSERT(!m_previous);
     ASSERT(!m_next);
 
+    RefTracker::trackDocDeref(m_refDocToken, this);
     document().decrementReferencingNodeCount();
 
 #if ENABLE(TOUCH_EVENTS) && PLATFORM(IOS_FAMILY) && (ASSERT_ENABLED || ENABLE(SECURITY_ASSERTIONS))

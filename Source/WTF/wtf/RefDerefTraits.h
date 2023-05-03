@@ -29,6 +29,7 @@
 #include <wtf/RefTracking.h>
 
 namespace WebCore {
+class CanvasGradient;
 class MediaSource;
 class MediaSessionActionHandler;
 class AbortSignal;
@@ -45,6 +46,11 @@ class PluginDocument;
 class SinkDocument;
 class TextDocument;
 class MediaQueryMatcher;
+class XMLDocument;
+class SVGDocument;
+class CanvasRenderingContext;
+class CanvasRenderingContext2D;
+class CanvasRenderingContext2DBase;
 } // namespace WebCore
 
 namespace WTF {
@@ -91,34 +97,92 @@ concept HasURL = requires {
 // Defined in RefTracker.h to avoid circular dependencies between Ref/RefPtr and the RefTracker's HashMap/Vector.
 struct RefTrackingTraits {
     static constexpr bool isRefTracked = true;
-    ALWAYS_INLINE void ref(auto&);
-    ALWAYS_INLINE void refIfNotNull(auto*);
-    ALWAYS_INLINE void derefIfNotNull(auto*);
-    ALWAYS_INLINE void adoptRef(auto*);
-    ALWAYS_INLINE void swapRef(RefTrackingSmartPtr auto&);
-    ALWAYS_INLINE void swapRef(const SmartPtr auto&);
-    ALWAYS_INLINE void takeRef(RefTrackingSmartPtr auto&);
-    ALWAYS_INLINE void takeRef(const SmartPtr auto&);
+    ALWAYS_INLINE void ref(auto& object)
+    {
+        m_refTrackingToken = object.trackRef();
+        object.ref();
+    }
 
-    ALWAYS_INLINE RefTrackingToken refTrackingToken() const;
-    ALWAYS_INLINE void setRefTrackingToken(RefTrackingToken);
+    ALWAYS_INLINE void refIfNotNull(auto* ptr)
+    {
+        if (LIKELY(ptr != nullptr)) {
+            m_refTrackingToken = ptr->trackRef();
+            ptr->ref();
+            return;
+        }
+
+        m_refTrackingToken = UntrackedRefToken();
+    }
+
+    ALWAYS_INLINE void derefIfNotNull(auto* ptr)
+    {
+        if (LIKELY(ptr != nullptr)) {
+            ptr->trackDeref(std::exchange(m_refTrackingToken, UntrackedRefToken()));
+            ptr->deref();
+        }
+    }
+
+    ALWAYS_INLINE void adoptRef(auto* ptr)
+    {
+        if (LIKELY(ptr != nullptr)) {
+            m_refTrackingToken =  ptr->trackRef();
+            return;
+        }
+
+        m_refTrackingToken = UntrackedRefToken();
+    }
+
+    ALWAYS_INLINE void swapRef(RefTrackingSmartPtr auto& smartPtr)
+    {
+        auto tmp = m_refTrackingToken;
+        m_refTrackingToken = smartPtr.refTrackingToken();
+        smartPtr.setRefTrackingToken(tmp);
+    }
+
+    ALWAYS_INLINE void swapRef(const SmartPtr auto&)
+    {
+        m_refTrackingToken = UntrackedRefToken();
+    }
+
+    ALWAYS_INLINE void takeRef(RefTrackingSmartPtr auto& smartPtr)
+    {
+        m_refTrackingToken = smartPtr.refTrackingToken();
+        smartPtr.setRefTrackingToken(UntrackedRefToken());
+    }
+
+    ALWAYS_INLINE void takeRef(const SmartPtr auto& smartPtr)
+    {
+        adoptRef(smartPtr.ptr());
+    }
+
+    ALWAYS_INLINE RefTrackingToken refTrackingToken() const { return m_refTrackingToken; }
+    ALWAYS_INLINE void setRefTrackingToken(RefTrackingToken token) { m_refTrackingToken = token; }
 private:
     RefTrackingToken m_refTrackingToken;
 };
 
-#define DEFINE_REF_TRACKING_TRAITS_FOR(class) \
-template<> struct RefDerefTraits<class> : public RefTrackingTraits { }
+#define DEFINE_REF_TRACKING_TRAITS(theClass) \
+template<> struct RefDerefTraits<theClass> : public RefTrackingTraits { }
 
-DEFINE_REF_TRACKING_TRAITS_FOR(WebCore::MediaSource);
-DEFINE_REF_TRACKING_TRAITS_FOR(WebCore::MediaSessionActionHandler);
-DEFINE_REF_TRACKING_TRAITS_FOR(WebCore::EventTarget);
-DEFINE_REF_TRACKING_TRAITS_FOR(WebCore::Node);
-DEFINE_REF_TRACKING_TRAITS_FOR(WebCore::ContainerNode);
-DEFINE_REF_TRACKING_TRAITS_FOR(WebCore::Document);
-DEFINE_REF_TRACKING_TRAITS_FOR(WebCore::HTMLDocument);
-DEFINE_REF_TRACKING_TRAITS_FOR(WebCore::MediaDocument);
+DEFINE_REF_TRACKING_TRAITS(WebCore::MediaSource);
+DEFINE_REF_TRACKING_TRAITS(WebCore::CanvasRenderingContext);
+DEFINE_REF_TRACKING_TRAITS(WebCore::CanvasRenderingContext2DBase);
+DEFINE_REF_TRACKING_TRAITS(WebCore::CanvasRenderingContext2D);
+DEFINE_REF_TRACKING_TRAITS(WebCore::MediaSessionActionHandler);
+DEFINE_REF_TRACKING_TRAITS(WebCore::EventTarget);
+DEFINE_REF_TRACKING_TRAITS(WebCore::Node);
+DEFINE_REF_TRACKING_TRAITS(WebCore::ContainerNode);
+DEFINE_REF_TRACKING_TRAITS(WebCore::Document);
+DEFINE_REF_TRACKING_TRAITS(WebCore::HTMLDocument);
+DEFINE_REF_TRACKING_TRAITS(WebCore::MediaDocument);
+DEFINE_REF_TRACKING_TRAITS(WebCore::ModelDocument);
+DEFINE_REF_TRACKING_TRAITS(WebCore::ImageDocument);
+DEFINE_REF_TRACKING_TRAITS(WebCore::TextDocument);
+DEFINE_REF_TRACKING_TRAITS(WebCore::XMLDocument);
+DEFINE_REF_TRACKING_TRAITS(WebCore::SVGDocument);
+DEFINE_REF_TRACKING_TRAITS(WebCore::CanvasGradient);
 
-#undef DEFINE_REF_TRACKING_TRAITS_FOR
+#undef DEFINE_REF_TRACKING_TRAITS
 } // namespace WTF
 
 using WTF::RefDerefTraits;

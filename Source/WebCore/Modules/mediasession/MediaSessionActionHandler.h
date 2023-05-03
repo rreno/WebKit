@@ -32,6 +32,7 @@
 #include "MediaSessionActionDetails.h"
 #include <wtf/Forward.h>
 #include <wtf/RefCounted.h>
+#include <wtf/RefTracker.h>
 
 namespace WebCore {
 
@@ -40,6 +41,11 @@ public:
     using ActiveDOMCallback::ActiveDOMCallback;
 
     virtual CallbackResult<void> handleEvent(const MediaSessionActionDetails&) = 0;
+
+    RefTrackingToken trackRef() const { return RefTracker::sharedTracker().trackRef("MediaSessionActionHandler"_s); }
+    void trackDeref(RefTrackingToken token) const { RefTracker::sharedTracker().trackDeref(token); }
+protected:
+    virtual bool hasCallback() const = 0;
 };
 
 } // namespace WebCore

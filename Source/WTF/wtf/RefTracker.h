@@ -26,6 +26,7 @@
 #pragma once
 
 #include <wtf/HashMap.h>
+#include <wtf/Lock.h>
 #include <wtf/RefDerefTraits.h>
 #include <wtf/Vector.h>
 #include <wtf/text/WTFString.h>
@@ -47,88 +48,17 @@ public:
     WTF_EXPORT_PRIVATE RefTrackingToken trackRef(const String& = nullString());
     WTF_EXPORT_PRIVATE void trackDeref(RefTrackingToken);
 
+    WTF_EXPORT_PRIVATE static RefTrackingToken trackDocRef(void*, void*);
+    WTF_EXPORT_PRIVATE static void trackDocDeref(RefTrackingToken, void*);
+    WTF_EXPORT_PRIVATE static void showRemainingDocReferences();
+
 private:
     RefTrackingToken getNextRefToken();
+    static HashMap<RefTrackingToken::ValueType, std::pair<std::pair<void*, void*>, std::unique_ptr<StackShot>>>& docRefBacktraceMap();
 
     HashMap<RefTrackingToken::ValueType, std::pair<String, std::unique_ptr<StackShot>>> m_refBacktraceMap;
     Vector<std::unique_ptr<StackShot>> m_untrackableDerefs;
 };
-
-inline void RefTrackingTraits::ref(auto& object)
-{
-//    WTFLogAlways("RefDerefTraits(RefTracking) ref.");
-    m_refTrackingToken = object.trackRef();
-    object.ref();
-}
-
-inline void RefTrackingTraits::refIfNotNull(auto* ptr)
-{
-//    WTFLogAlways("RefDerefTraits(RefTracking) refIfNotNull. %" PRIuPTR " (ptr)", (uintptr_t)ptr);
-    if (LIKELY(ptr != nullptr)) {
-        m_refTrackingToken = ptr->trackRef();
-        ptr->ref();
-        return;
-    }
-
-    m_refTrackingToken = UntrackedRefToken();
-}
-
-inline void RefTrackingTraits::derefIfNotNull(auto* ptr)
-{
-//    WTFLogAlways("RefDerefTraits(RefTracking) derefIfNotNull. %" PRIuPTR " (ptr)"/* %u (token)"*/, (uintptr_t)ptr/*, m_refTrackingToken.value()*/);
-    if (LIKELY(ptr != nullptr)) {
-        ptr->trackDeref(std::exchange(m_refTrackingToken, UntrackedRefToken()));
-        ptr->deref();
-    }
-}
-
-inline void RefTrackingTraits::adoptRef(auto* ptr)
-{
-//    WTFLogAlways("RefDerefTraits(RefTracking): adoptRef. %" PRIuPTR " (ptr)", (uintptr_t)ptr);
-    if (LIKELY(ptr != nullptr)) {
-        m_refTrackingToken =  ptr->trackRef();
-        return;
-    }
-
-    m_refTrackingToken = UntrackedRefToken();
-}
-
-inline void RefTrackingTraits::takeRef(RefTrackingSmartPtr auto& smartPtr)
-{
-//    WTFLogAlways("RefDerefTraits(Node RefTracking): takeRef (RefTrackingSmartPtr)");
-    m_refTrackingToken = smartPtr.refTrackingToken();
-    smartPtr.setRefTrackingToken(UntrackedRefToken());
-}
-
-inline void RefTrackingTraits::takeRef(const SmartPtr auto& smartPtr)
-{
-//    WTFLogAlways("RefDerefTraits(Node RefTracking): takeRef (SmartPtr)");
-    adoptRef(smartPtr.ptr());
-}
-
-inline void RefTrackingTraits::swapRef(RefTrackingSmartPtr auto& smartPtr)
-{
-//    WTFLogAlways("RefDerefTraits(Node RefTracking): swap (RefTrackingSmartPtr)");
-    RefTrackingToken tmp = m_refTrackingToken;
-    m_refTrackingToken = smartPtr.refTrackingToken();
-    smartPtr.setRefTrackingToken(tmp);
-}
-
-inline void RefTrackingTraits::swapRef(const SmartPtr auto&)
-{
-//    WTFLogAlways("RefDerefTraits(Node RefTracking): swap (SmartPtr)");
-    m_refTrackingToken = UntrackedRefToken();
-}
-
-inline RefTrackingToken RefTrackingTraits::refTrackingToken() const
-{
-    return m_refTrackingToken;
-}
-
-inline void RefTrackingTraits::setRefTrackingToken(RefTrackingToken token)
-{
-    m_refTrackingToken = token;
-}
 
 } // namespace WTF
 
