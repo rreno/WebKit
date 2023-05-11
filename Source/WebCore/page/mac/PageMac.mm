@@ -39,6 +39,7 @@
 #import "SVGDocument.h"
 #import "SVGElementTypeHelpers.h"
 #import <pal/Logging.h>
+#import <wtf/RefTracker.h>
 
 #if PLATFORM(IOS_FAMILY)
 #import "WebCoreThreadInternal.h"
@@ -85,6 +86,22 @@ void Page::platformInitialize()
                 const char* documentType = is<SVGDocument>(document) ? "SVGDocument" : "Document";
                 WTFLogAlways("%s %p %" PRIu64 "-%s (refCount %d, referencingNodeCount %d) %s", documentType, document, document->identifier().processIdentifier().toUInt64(), document->identifier().toString().utf8().data(), document->refCount(), document->referencingNodeCount(), document->url().string().utf8().data());
             }
+        });
+
+        PAL::registerNotifyCallback("com.apple.WebKit.showRemainingReferences"_s, [] {
+            for (const auto* document : Document::allDocuments()) {
+                WTFLogAlways("------ RefTracking for document %s ------", document->url().string().utf8().data());
+                document->refTracker().showRemainingReferences();
+            }
+
+            WTFLogAlways("------ RefTracking - shared tracker -------- ");
+            RefTracker::sharedTracker().showRemainingReferences();
+
+            WTFLogAlways("------ RefTracking - JSC::Strong tracker -------- ");
+            RefTracker::strongTracker().showRemainingReferences();
+
+            WTFLogAlways("------ RefTracking - Node tracker -------- ");
+            RefTracker::showRemainingNodes();
         });
     });
 }

@@ -791,7 +791,7 @@ void Document::removedLastRef()
 
         // If removing a child removes the last node reference, we don't want the scope to be destroyed
         // until after removeDetachedChildren returns, so we protect ourselves.
-        incrementReferencingNodeCount();
+        incrementReferencingNodeCount(this);
 
         RELEASE_ASSERT(!hasLivingRenderTree());
         // We must make sure not to be retaining any of our children through
@@ -834,7 +834,7 @@ void Document::removedLastRef()
         // We need to do this right now since selfOnlyDeref() can delete this.
         m_inRemovedLastRefFunction = false;
 #endif
-        decrementReferencingNodeCount();
+        decrementReferencingNodeCount(this);
     } else {
         commonTeardown();
 #if ASSERT_ENABLED

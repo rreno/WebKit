@@ -394,7 +394,7 @@ Node::Node(Document& document, ConstructionType type)
 {
     ASSERT(isMainThread());
 
-    document.incrementReferencingNodeCount();
+    document.incrementReferencingNodeCount(this);
 
 #if !defined(NDEBUG) || DUMP_NODE_STATISTICS
     trackForDebugging();
@@ -424,7 +424,7 @@ Node::~Node()
     ASSERT(!m_previous);
     ASSERT(!m_next);
 
-    document().decrementReferencingNodeCount();
+    document().decrementReferencingNodeCount(this);
 
 #if ENABLE(TOUCH_EVENTS) && PLATFORM(IOS_FAMILY) && (ASSERT_ENABLED || ENABLE(SECURITY_ASSERTIONS))
     for (auto* document : Document::allDocuments()) {
@@ -2095,7 +2095,7 @@ void Node::moveTreeToNewScope(Node& root, TreeScope& oldScope, TreeScope& newSco
     Document& newDocument = newScope.documentScope();
     bool newScopeIsUAShadowTree = newScope.rootNode().hasBeenInUserAgentShadowTree();
     if (&oldDocument != &newDocument) {
-        oldDocument.incrementReferencingNodeCount();
+        oldDocument.incrementReferencingNodeCount(&root);
         traverseSubtreeToUpdateTreeScope(root, [&](Node& node) {
             ASSERT(!node.isTreeScope());
             RELEASE_ASSERT_WITH_SECURITY_IMPLICATION(&node.treeScope() == &oldScope);
@@ -2109,7 +2109,7 @@ void Node::moveTreeToNewScope(Node& root, TreeScope& oldScope, TreeScope& newSco
             moveShadowTreeToNewDocument(shadowRoot, oldDocument, newDocument);
         });
         RELEASE_ASSERT_WITH_SECURITY_IMPLICATION(&oldScope.documentScope() == &oldDocument && &newScope.documentScope() == &newDocument);
-        oldDocument.decrementReferencingNodeCount();
+        oldDocument.decrementReferencingNodeCount(&root);
     } else {
         traverseSubtreeToUpdateTreeScope(root, [&](Node& node) {
             ASSERT(!node.isTreeScope());
@@ -2129,8 +2129,8 @@ void Node::moveTreeToNewScope(Node& root, TreeScope& oldScope, TreeScope& newSco
 
 void Node::moveNodeToNewDocument(Document& oldDocument, Document& newDocument)
 {
-    newDocument.incrementReferencingNodeCount();
-    oldDocument.decrementReferencingNodeCount();
+    newDocument.incrementReferencingNodeCount(this);
+    oldDocument.decrementReferencingNodeCount(this);
 
     if (hasRareData()) {
         if (auto* nodeLists = rareData()->nodeLists())

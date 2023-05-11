@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 52;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -70,6 +70,9 @@
 		3A5BCFA3298768E300E0ABB2 /* RefVector.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5BCFA2298768E300E0ABB2 /* RefVector.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		4427C5AA21F6D6C300A612A4 /* ASCIICType.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4427C5A921F6D6C300A612A4 /* ASCIICType.cpp */; };
 		4448265228D18CA600D916E8 /* VectorCF.h in Headers */ = {isa = PBXBuildFile; fileRef = 4448265128D18CA600D916E8 /* VectorCF.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		453A45932A0D563000986B51 /* RefTracking.h in Headers */ = {isa = PBXBuildFile; fileRef = 453A45902A0D563000986B51 /* RefTracking.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		453A45942A0D563000986B51 /* RefTracker.h in Headers */ = {isa = PBXBuildFile; fileRef = 453A45912A0D563000986B51 /* RefTracker.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		453A45952A0D563000986B51 /* RefTracker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 453A45922A0D563000986B51 /* RefTracker.cpp */; };
 		46449E8B2822E5680005A8BC /* WeakHashCountedSet.h in Headers */ = {isa = PBXBuildFile; fileRef = 46449E8A2822E5670005A8BC /* WeakHashCountedSet.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		4655743627F5FC4A002D5522 /* ASCIILiteralCocoa.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4655743527F5FC4A002D5522 /* ASCIILiteralCocoa.mm */; };
 		46BEB6EB22FFE24900269867 /* RefCounted.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46BEB6E922FFDDD500269867 /* RefCounted.cpp */; };
@@ -1123,6 +1126,9 @@
 		4448265128D18CA600D916E8 /* VectorCF.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VectorCF.h; sourceTree = "<group>"; };
 		4468567225094FE8008CCA05 /* ThreadSanitizerSupport.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ThreadSanitizerSupport.h; sourceTree = "<group>"; };
 		44CDE4D226EE6CDA009F6ACB /* TypeCastsCocoa.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TypeCastsCocoa.h; sourceTree = "<group>"; };
+		453A45902A0D563000986B51 /* RefTracking.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RefTracking.h; sourceTree = "<group>"; };
+		453A45912A0D563000986B51 /* RefTracker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RefTracker.h; sourceTree = "<group>"; };
+		453A45922A0D563000986B51 /* RefTracker.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RefTracker.cpp; sourceTree = "<group>"; };
 		46209A27266D543A007F8F4A /* CancellableTask.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CancellableTask.h; sourceTree = "<group>"; };
 		46449E8A2822E5670005A8BC /* WeakHashCountedSet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WeakHashCountedSet.h; sourceTree = "<group>"; };
 		4655743527F5FC4A002D5522 /* ASCIILiteralCocoa.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = ASCIILiteralCocoa.mm; sourceTree = "<group>"; };
@@ -2260,6 +2266,9 @@
 				86F46F5F1A2840EE00CCBF22 /* RefCounter.h */,
 				9785729829FAC2BB00350CBA /* ReferenceWrapperVector.h */,
 				A8A47303151A825B004123FF /* RefPtr.h */,
+				453A45922A0D563000986B51 /* RefTracker.cpp */,
+				453A45912A0D563000986B51 /* RefTracker.h */,
+				453A45902A0D563000986B51 /* RefTracking.h */,
 				3A5BCFA2298768E300E0ABB2 /* RefVector.h */,
 				FE3842342325CC80009DD445 /* ResourceUsage.h */,
 				A8A47305151A825B004123FF /* RetainPtr.h */,
@@ -3221,6 +3230,8 @@
 				DD3DC8D927A4BF8E007E5B61 /* RefCounter.h in Headers */,
 				9785729929FAC2BB00350CBA /* ReferenceWrapperVector.h in Headers */,
 				DD3DC91D27A4BF8E007E5B61 /* RefPtr.h in Headers */,
+				453A45942A0D563000986B51 /* RefTracker.h in Headers */,
+				453A45932A0D563000986B51 /* RefTracking.h in Headers */,
 				3A5BCFA3298768E300E0ABB2 /* RefVector.h in Headers */,
 				DD3DC8C727A4BF8E007E5B61 /* ResourceUsage.h in Headers */,
 				DD3DC92127A4BF8E007E5B61 /* RetainPtr.h in Headers */,
@@ -3795,6 +3806,7 @@
 				0FEC3C5E1F368A9700F59B6C /* ReadWriteLock.cpp in Sources */,
 				46BEB6EB22FFE24900269867 /* RefCounted.cpp in Sources */,
 				A8A4741A151A825B004123FF /* RefCountedLeakCounter.cpp in Sources */,
+				453A45952A0D563000986B51 /* RefTracker.cpp in Sources */,
 				E392FA2722E92BFF00ECDC73 /* ResourceUsageCocoa.cpp in Sources */,
 				2CDED0F318115C85004DBA70 /* RunLoop.cpp in Sources */,
 				2CDED0EF18115C38004DBA70 /* RunLoopCF.cpp in Sources */,

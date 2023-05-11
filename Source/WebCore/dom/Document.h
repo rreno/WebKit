@@ -56,6 +56,7 @@
 #include <wtf/Logger.h>
 #include <wtf/ObjectIdentifier.h>
 #include <wtf/Observer.h>
+#include <wtf/RefTracker.h>
 #include <wtf/UniqueRef.h>
 #include <wtf/WeakHashSet.h>
 #include <wtf/WeakListHashSet.h>
@@ -389,16 +390,26 @@ public:
     // not enough to keep it from removing its children. This allows a
     // node that outlives its document to still have a valid document
     // pointer without introducing reference cycles.
-    void incrementReferencingNodeCount()
+    void incrementReferencingNodeCount(Node* node)
     {
         ASSERT(!m_deletionHasBegun);
         ++m_referencingNodeCount;
+#if ENABLE(REF_TRACKING)
+        m_referencingNodeCountTracker.trackDocRef(node, url().string());
+#else
+        UNUSED_PARAM(node);
+#endif
     }
 
-    void decrementReferencingNodeCount()
+    void decrementReferencingNodeCount(Node* node)
     {
         ASSERT(!m_deletionHasBegun || !m_referencingNodeCount);
         --m_referencingNodeCount;
+#if ENABLE(REF_TRACKING)
+        m_referencingNodeCountTracker.trackDocDeref(node);
+#else
+        UNUSED_PARAM(node);
+#endif
         if (!m_referencingNodeCount && !refCount()) {
 #if ASSERT_ENABLED
             m_deletionHasBegun = true;
@@ -2406,6 +2417,9 @@ private:
     static bool hasEverCreatedAnAXObjectCache;
 
     RefPtr<ResizeObserver> m_resizeObserverForContainIntrinsicSize;
+#if ENABLE(REF_TRACKING)
+    RefTracker m_referencingNodeCountTracker { };
+#endif
 };
 
 Element* eventTargetElementForDocument(Document*);
