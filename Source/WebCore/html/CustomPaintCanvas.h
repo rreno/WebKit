@@ -55,6 +55,8 @@ public:
 
     RefPtr<PaintRenderingContext2D> getContext();
 
+    void reset() final { }
+
     CanvasRenderingContext* renderingContext() const final { return m_context.get(); }
     GraphicsContext* drawingContext() const final;
     GraphicsContext* existingDrawingContext() const final;

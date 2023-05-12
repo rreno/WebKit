@@ -77,6 +77,8 @@ public:
 
     ImageBuffer* buffer() const;
 
+    virtual void reset() = 0;
+
     virtual void setImageBufferAndMarkDirty(RefPtr<ImageBuffer>&&) { }
 
     virtual AffineTransform baseTransform() const;

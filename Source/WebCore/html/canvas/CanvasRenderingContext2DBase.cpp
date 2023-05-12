@@ -262,17 +262,6 @@ bool CanvasRenderingContext2DBase::isAccelerated() const
 #endif
 }
 
-void CanvasRenderingContext2DBase::reset()
-{
-    unwindStateStack();
-    m_stateStack.resize(1);
-    m_stateStack.first() = State();
-    m_path.clear();
-    m_unrealizedSaveCount = 0;
-    
-    m_recordingContext = nullptr;
-}
-
 CanvasRenderingContext2DBase::State::State()
     : strokeStyle(Color::black)
     , fillStyle(Color::black)
@@ -471,6 +460,22 @@ void CanvasRenderingContext2DBase::restore()
     if (!c)
         return;
     c->restore();
+}
+
+void CanvasRenderingContext2DBase::reset()
+{
+    canvasBase().reset();
+}
+
+void CanvasRenderingContext2DBase::resetState()
+{
+    unwindStateStack();
+    m_stateStack.resize(1);
+    m_stateStack.first() = State();
+    m_path.clear();
+    m_unrealizedSaveCount = 0;
+    m_recordingContext = nullptr;
+
 }
 
 void CanvasRenderingContext2DBase::setStrokeStyle(CanvasStyle style)

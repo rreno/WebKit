@@ -141,6 +141,8 @@ public:
 
     void save() { ++m_unrealizedSaveCount; }
     void restore();
+    void reset();
+    void resetState();
 
     void scale(double sx, double sy);
     void rotate(double angleInRadians);
@@ -211,8 +213,6 @@ public:
     void putImageData(ImageData&, int dx, int dy, int dirtyX, int dirtyY, int dirtyWidth, int dirtyHeight);
 
     static constexpr float webkitBackingStorePixelRatio() { return 1; }
-
-    void reset();
 
     bool imageSmoothingEnabled() const { return state().imageSmoothingEnabled; }
     void setImageSmoothingEnabled(bool);

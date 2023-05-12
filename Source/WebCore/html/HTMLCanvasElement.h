@@ -162,7 +162,7 @@ private:
     bool canContainRangeEndPoint() const final;
     bool canStartSelection() const final;
 
-    void reset();
+    void reset() final;
 
     void createImageBuffer() const final;
     void clearImageBuffer() const;

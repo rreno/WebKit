@@ -594,7 +594,7 @@ void HTMLCanvasElement::reset()
 
     resetGraphicsContextState();
     if (is<CanvasRenderingContext2D>(m_context))
-        downcast<CanvasRenderingContext2D>(*m_context).reset();
+        downcast<CanvasRenderingContext2D>(*m_context).resetState();
 
     IntSize oldSize = size();
     IntSize newSize(w, h);

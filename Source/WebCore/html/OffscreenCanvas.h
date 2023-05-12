@@ -179,7 +179,7 @@ private:
     void createImageBuffer() const final;
     std::unique_ptr<SerializedImageBuffer> takeImageBuffer() const;
 
-    void reset();
+    void reset() final;
 
     void setPlaceholderCanvas(HTMLCanvasElement&);
     void pushBufferToPlaceholder();

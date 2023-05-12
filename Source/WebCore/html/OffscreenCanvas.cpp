@@ -568,7 +568,7 @@ void OffscreenCanvas::reset()
 {
     resetGraphicsContextState();
     if (is<OffscreenCanvasRenderingContext2D>(m_context))
-        downcast<OffscreenCanvasRenderingContext2D>(*m_context).reset();
+        downcast<OffscreenCanvasRenderingContext2D>(*m_context).resetState();
 
     m_hasCreatedImageBuffer = false;
     setImageBuffer(nullptr);
