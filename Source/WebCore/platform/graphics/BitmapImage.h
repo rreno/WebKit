@@ -38,6 +38,10 @@
 #include <wtf/RetainPtr.h>
 #endif
 
+#if ENABLE(REF_TRACKING)
+#include <wtf/RefTracker.h>
+#endif
+
 #if USE(APPKIT)
 OBJC_CLASS NSImage;
 #endif
@@ -75,6 +79,11 @@ public:
     WEBCORE_EXPORT static RefPtr<BitmapImage> create(HBITMAP);
 #endif
     virtual ~BitmapImage();
+
+#if ENABLE(REF_TRACKING)
+    RefTrackingToken trackRef() const { return RefTracker::sharedTracker().trackRef(); }
+    void trackDeref(RefTrackingToken token) const { return RefTracker::sharedTracker().trackDeref(token); }
+#endif
 
     void updateFromSettings(const Settings&);
 

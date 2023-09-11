@@ -25,6 +25,8 @@
 
 #import "config.h"
 
+#import <wtf/RefTracker.h>
+
 #if PLATFORM(IOS_FAMILY)
 
 #import "PlatformUtilities.h"

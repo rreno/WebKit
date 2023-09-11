@@ -29,6 +29,7 @@
 
 #include "RealtimeOutgoingVideoSource.h"
 #include <webrtc/api/video/video_rotation.h>
+#include <wtf/RefTracker.h>
 
 using CVPixelBufferPoolRef = struct __CVPixelBufferPool*;
 using CVPixelBufferRef = struct __CVBuffer*;

@@ -437,6 +437,7 @@ bool ImageDecoderAVFObjC::storeSampleBuffer(CMSampleBufferRef sampleBuffer)
 
     CGImageRef rawImage = nullptr;
     if (noErr != VTCreateCGImageFromCVPixelBuffer(pixelBuffer.get(), nullptr, &rawImage)) {
+        WTFLogAlways("RYAN: ImageDecoderAVFObjC::storeSampleBuffer(%p) - could not create CGImage from pixelBuffer", this);
         RELEASE_LOG_ERROR(Images, "ImageDecoderAVFObjC::storeSampleBuffer(%p) - could not create CGImage from pixelBuffer", this);
         return false;
     }
@@ -681,11 +682,20 @@ void ImageDecoderAVFObjC::setData(const FragmentedSharedBuffer& data, bool allDa
 void ImageDecoderAVFObjC::clearFrameBufferCache(size_t index)
 {
     size_t i = 0;
+    bool clear = true;
+    size_t samplesWithCGImageRefsThatWereNotCleared = 0;
     for (auto& samplePair : m_sampleData.presentationOrder()) {
-        toSample(samplePair)->setImage(nullptr);
+        if (clear)
+            toSample(samplePair)->setImage(nullptr);
+        else {
+            if (toSample(samplePair)->image() != nullptr)
+                samplesWithCGImageRefsThatWereNotCleared++;
+        }
         if (++i > index)
-            break;
+            clear = false;
     }
+    
+    WTFLogAlways("RYAN: ImageDecoderAVFObjC::clearFrameBufferCache(%p) index %zu samples left with image buffers: %zu", this, index, samplesWithCGImageRefsThatWereNotCleared);
 }
 
 const ImageDecoderAVFObjCSample* ImageDecoderAVFObjC::sampleAtIndex(size_t index) const

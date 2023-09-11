@@ -37,4 +37,5 @@
 
 #include <wtf/Platform.h>
 
+#include <wtf/RefTracker.h>
 #include <wtf/RetainPtr.h>

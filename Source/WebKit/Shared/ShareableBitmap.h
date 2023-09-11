@@ -34,6 +34,7 @@
 #include <wtf/DebugHeap.h>
 #include <wtf/ExportMacros.h>
 #include <wtf/RefPtr.h>
+#include <wtf/RefTracker.h>
 #include <wtf/ThreadSafeRefCounted.h>
 
 namespace WebCore {
@@ -124,6 +125,9 @@ public:
 
     // Create a shareable bitmap from an already existing shared memory block.
     static RefPtr<ShareableBitmap> create(const ShareableBitmapConfiguration&, Ref<SharedMemory>&&);
+
+    RefTrackingToken trackRef() const { return RefTracker::sharedTracker().trackRef(); }
+    void trackDeref(RefTrackingToken token) const { return RefTracker::sharedTracker().trackDeref(token); }
 
     // Create a shareable bitmap from a NativeImage.
 #if USE(CG)

@@ -47,6 +47,7 @@
 #import <wtf/FileSystem.h>
 #import <wtf/JSONValues.h>
 #import <wtf/LoggerHelper.h>
+#import <wtf/RefTracker.h>
 #import <wtf/cocoa/VectorCocoa.h>
 #import <wtf/text/Base64.h>
 #import <wtf/text/StringHash.h>

@@ -28,6 +28,7 @@
 #if ENABLE(APPLE_PAY)
 
 #include "ControlPart.h"
+#include <wtf/RefTracker.h>
 
 namespace WebCore {
 

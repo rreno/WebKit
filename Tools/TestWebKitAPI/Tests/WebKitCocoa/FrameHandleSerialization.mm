@@ -29,6 +29,7 @@
 #import <WebKit/WKBundlePageUIClient.h>
 #import <WebKit/WKWebProcessPlugIn.h>
 #import <WebKit/WKWebProcessPlugInBrowserContextControllerPrivate.h>
+#import <wtf/RefTracker.h>
 
 void mouseDidMoveOverElement(WKBundlePageRef page, WKBundleHitTestResultRef hitTestResult, WKEventModifiers modifiers, WKTypeRef* userData, const void* clientInfo)
 {

@@ -26,6 +26,8 @@
 #import "config.h"
 #import "Cursor.h"
 
+#import <wtf/RefTracker.h>
+
 #if HAVE(NSCURSOR)
 
 #import <AppKit/NSCursor.h>

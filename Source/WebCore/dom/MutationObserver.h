@@ -33,6 +33,7 @@
 
 #include "ExceptionOr.h"
 #include "GCReachableRef.h"
+#include <wtf/RefTracker.h>
 #include <wtf/Forward.h>
 #include <wtf/HashSet.h>
 #include <wtf/IsoMalloc.h>
@@ -88,6 +89,9 @@ public:
         std::optional<bool> characterDataOldValue;
         std::optional<Vector<AtomString>> attributeFilter;
     };
+    
+    RefTrackingToken trackRef() const { return RefTracker::sharedTracker().trackRef(); }
+    void trackDeref(RefTrackingToken token) const { RefTracker::sharedTracker().trackDeref(token); }
 
     ExceptionOr<void> observe(Node&, const Init&);
     

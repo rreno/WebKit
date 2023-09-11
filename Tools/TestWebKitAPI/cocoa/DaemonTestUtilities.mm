@@ -25,6 +25,7 @@
 
 #import "config.h"
 #import "DaemonTestUtilities.h"
+#import <wtf/RefTracker.h>
 
 #if PLATFORM(MAC) || PLATFORM(IOS) || PLATFORM(VISION)
 

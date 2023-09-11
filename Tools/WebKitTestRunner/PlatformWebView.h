@@ -27,6 +27,7 @@
 
 #include "TestOptions.h"
 #include <wtf/FastMalloc.h>
+#include <wtf/RefTracker.h>
 #include <wtf/text/WTFString.h>
 
 #if PLATFORM(COCOA) && !defined(BUILDING_GTK__)

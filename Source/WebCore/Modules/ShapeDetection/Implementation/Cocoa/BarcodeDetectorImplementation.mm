@@ -36,6 +36,7 @@
 #import "VisionUtilities.h"
 #import <optional>
 #import <pal/cocoa/VisionSoftLink.h>
+#import <wtf/RefTracker.h>
 #import <wtf/RetainPtr.h>
 
 namespace WebCore::ShapeDetection {

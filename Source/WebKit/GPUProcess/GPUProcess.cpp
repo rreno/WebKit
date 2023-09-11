@@ -51,6 +51,7 @@
 #include <WebCore/MemoryRelease.h>
 #include <WebCore/NowPlayingManager.h>
 #include <WebCore/RuntimeApplicationChecks.h>
+#include <pal/Logging.h>
 #include <wtf/Algorithms.h>
 #include <wtf/CallbackAggregator.h>
 #include <wtf/Language.h>
@@ -240,6 +241,13 @@ void GPUProcess::initializeGPUProcess(GPUProcessCreationParameters&& parameters)
             process->lowMemoryHandler(critical, synchronous);
     });
     memoryPressureHandler.install();
+    
+    PAL::registerNotifyCallback("com.apple.WebKit.showRetained"_s, [] {
+        WTFLogAlways("------ RefTracking - Ref tracker -------- ");
+        RefTracker::sharedTracker().showRemainingReferences();
+        WTFLogAlways("------ RefTracking - RetainPtr tracker -------- ");
+        RefTracker::retainTracker().showRemainingReferences();
+    });
 
 #if PLATFORM(IOS_FAMILY) || ENABLE(ROUTING_ARBITRATION)
     DeprecatedGlobalSettings::setShouldManageAudioSessionCategory(true);

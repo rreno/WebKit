@@ -37,6 +37,7 @@
 #import "WKWebViewConfigurationExtras.h"
 #import <WebKit/WKWebViewPrivate.h>
 #import <WebKit/_WKThumbnailView.h>
+#import <wtf/RefTracker.h>
 #import <wtf/RetainPtr.h>
 
 static bool didFinishLoad;

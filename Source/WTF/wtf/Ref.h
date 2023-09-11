@@ -123,6 +123,8 @@ public:
     T& get() const { ASSERT(m_ptr); return *PtrTraits::unwrap(m_ptr); }
     operator T&() const { ASSERT(m_ptr); return *PtrTraits::unwrap(m_ptr); }
     bool operator!() const { ASSERT(m_ptr); return !*m_ptr; }
+    ALWAYS_INLINE bool operator==(std::nullptr_t) const { ASSERT(m_ptr); return false; }
+    ALWAYS_INLINE bool operator!=(std::nullptr_t) const { ASSERT(m_ptr); return true; }
 
     template<typename X, typename Y, template <typename> typename Z> Ref replace(Ref<X, Y, Z>&&) WARN_UNUSED_RETURN;
 
@@ -312,7 +314,7 @@ inline Ref<Target> downcast(Ref<Source, SourcePtrTraits, SourceRefDerefTraits> s
     return static_reference_cast<Target>(WTFMove(source));
 }
 
-template <typename Target, typename Source, typename TargetPtrTraits = RawPtrTraits<Target>, template <typename> typename TargetRefDerefTraits = RefDerefTraits, typename SourcePtrTraits, typename SourceRefDerefTraits>
+template <typename Target, typename Source, typename TargetPtrTraits = RawPtrTraits<Target>, template <typename> typename TargetRefDerefTraits = RefDerefTraits, typename SourcePtrTraits, template <typename> typename SourceRefDerefTraits>
 inline RefPtr<Target, TargetPtrTraits, TargetRefDerefTraits> dynamicDowncast(Ref<Source, SourcePtrTraits, SourceRefDerefTraits> source)
 {
     static_assert(!std::is_same_v<Source, Target>, "Unnecessary cast to same type");

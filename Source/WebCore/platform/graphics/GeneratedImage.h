@@ -28,6 +28,10 @@
 #include "FloatSize.h"
 #include "Image.h"
 
+#if ENABLE(REF_TRACKING)
+#include <wtf/RefTracker.h>
+#endif
+
 namespace WebCore {
 
 class GeneratedImage : public Image {
@@ -39,6 +43,11 @@ public:
     void computeIntrinsicDimensions(Length& intrinsicWidth, Length& intrinsicHeight, FloatSize& intrinsicRatio) override;
 
     FloatSize size(ImageOrientation = ImageOrientation::Orientation::FromImage) const override { return m_size; }
+
+#if ENABLE(REF_TRACKING)
+    RefTrackingToken trackRef() const { return RefTracker::sharedTracker().trackRef(); }
+    void trackDeref(RefTrackingToken token) const { return RefTracker::sharedTracker().trackDeref(token); }
+#endif
 
 protected:
     ImageDrawResult draw(GraphicsContext&, const FloatRect& dstRect, const FloatRect& srcRect, const ImagePaintingOptions& = { }) override = 0;

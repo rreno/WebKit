@@ -26,6 +26,7 @@
 #pragma once
 
 #include "ImageDecoder.h"
+#include <wtf/RefTracker.h>
 
 #if USE(CG)
 

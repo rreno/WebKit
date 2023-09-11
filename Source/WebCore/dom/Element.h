@@ -38,7 +38,7 @@
 #include "WebAnimationTypes.h"
 #include <JavaScriptCore/Forward.h>
 
-#define DUMP_NODE_STATISTICS 0
+#define DUMP_NODE_STATISTICS 1
 
 namespace JSC {
 class JSGlobalObject;

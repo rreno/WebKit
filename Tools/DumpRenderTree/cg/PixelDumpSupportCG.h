@@ -31,6 +31,7 @@
 #pragma once
 
 #include <wtf/RefCounted.h>
+#include <wtf/RefTracker.h>
 #include <wtf/RetainPtr.h>
 
 typedef struct CGContext* CGContextRef;

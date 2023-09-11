@@ -26,6 +26,7 @@
 #include "config.h"
 #include "RefTracker.h"
 
+#include <atomic>
 #include <wtf/NeverDestroyed.h>
 #include <wtf/RefTracking.h>
 #include <wtf/StackShot.h>
@@ -36,7 +37,7 @@ static constexpr size_t maxStackSize = 512;
 
 RefTrackingToken RefTracker::getNextRefToken()
 {
-    static RefTrackingToken::ValueType tokenValue{};
+    static std::atomic<RefTrackingToken::ValueType> tokenValue{};
     return RefTrackingToken(++tokenValue);
 }
 
@@ -52,13 +53,22 @@ RefTracker& RefTracker::strongTracker()
     return tracker.get();
 }
 
+RefTracker& RefTracker::retainTracker()
+{
+    static NeverDestroyed<RefTracker> tracker {};
+    return tracker.get();
+}
+
 RefTracker::RefTracker() = default;
 RefTracker::~RefTracker() = default;
 
 RefTrackingToken RefTracker::trackRef(const String& url)
 {
     auto token = getNextRefToken();
-    m_refBacktraceMap.add(token.value(), std::make_pair(url, std::make_unique<StackShot>(maxStackSize)));
+    {
+        Locker lock { m_refBacktraceLock };
+        m_refBacktraceMap.add(token.value(), std::make_pair(url, std::make_unique<StackShot>(maxStackSize)));
+    }
     //WTFLogAlways("RefTracker: Added token %u (%s)", token.value(), url.utf8().data());
     return token;
 }
@@ -66,38 +76,64 @@ RefTrackingToken RefTracker::trackRef(const String& url)
 void RefTracker::trackDeref(RefTrackingToken token)
 {
     if (!token.value()) {
+        Locker lock { m_untrackableDerefsLock };
         m_untrackableDerefs.append(std::make_unique<StackShot>(maxStackSize));
         return;
     }
-    
-    if (!m_refBacktraceMap.remove(token.value()))
+
+    bool removed = false;
+    {
+        Locker lock { m_refBacktraceLock };
+        removed = m_refBacktraceMap.remove(token.value());
+    }
+
+    if (!removed)
         WTFLogAlways("RefTracker: trackDeref passed token %u that was not tracked or already removed.", token.value());
 
 //    WTFLogAlways("RefTracker: Removed token %u", token.value());
 }
 
+size_t RefTracker::refBacktraceMapSize() const
+{
+    Locker lock { m_refBacktraceLock };
+    return m_refBacktraceMap.size();
+}
+
+size_t RefTracker::untrackableDerefsSize() const
+{
+    Locker lock { m_untrackableDerefsLock };
+    return m_untrackableDerefs.size();
+}
+
 void RefTracker::showRemainingReferences() const
 {
-    if (m_refBacktraceMap.size() == 0 && m_untrackableDerefs.size() == 0)
+    if (refBacktraceMapSize() == 0 && untrackableDerefsSize() == 0)
         WTFLogAlways("RefTracker: No remaining references.");
     const size_t framesToSkip = 4;
-    for (const auto& [token, stack] : m_refBacktraceMap) {
-        WTFLogAlways("RefTracker: Backtrace for token %u (%s)\n", token, stack.first.utf8().data());
-        WTFPrintBacktrace(stack.second->array() + framesToSkip, stack.second->size() - framesToSkip);
-        WTFLogAlways("\n");
+    {
+        Locker lock { m_refBacktraceLock };
+        for (const auto& [token, stack] : m_refBacktraceMap) {
+            WTFLogAlways("RefTracker: Backtrace for token %u (%s)\n", token, stack.first.utf8().data());
+            WTFPrintBacktrace(stack.second->array() + framesToSkip, stack.second->size() - framesToSkip);
+            WTFLogAlways("\n");
+        }
     }
 
 #if 0
     WTFLogAlways("RefTracker: %zu untracked derefs.", m_untrackableDerefs.size());
 #endif
 #if 1
-    for (const auto& stack : m_untrackableDerefs) {
-        WTFLogAlways("RefTracker: Refs for the following were not tracked:\n:");
-        WTFPrintBacktrace(stack->array() + framesToSkip, stack->size() - framesToSkip);
+    {
+        Locker lock { m_untrackableDerefsLock };
+        for (const auto& stack : m_untrackableDerefs) {
+            WTFLogAlways("RefTracker: Refs for the following were not tracked:\n:");
+            WTFPrintBacktrace(stack->array() + framesToSkip, stack->size() - framesToSkip);
+        }
     }
 #endif
 }
 
+#if 0
 void RefTracker::showBacktraceForToken(RefTrackingToken token) const
 {
     const size_t framesToSkip = 4;
@@ -114,6 +150,6 @@ void RefTracker::showBacktraceForToken(RefTrackingToken token) const
     WTFPrintBacktrace(it->value.second->array() + framesToSkip, it->value.second->size() - framesToSkip);
     WTFLogAlways("\n");
 }
-
+#endif
 
 } // namespace WTF

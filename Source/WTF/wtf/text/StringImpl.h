@@ -74,7 +74,7 @@ struct StringViewHashTranslator;
 struct SubstringTranslator;
 struct UCharBufferTranslator;
 
-template<typename> class RetainPtr;
+template<typename, template <typename> typename> class RetainPtr;
 
 template<typename> struct BufferFromStaticDataTranslator;
 template<typename> struct HashAndCharactersTranslator;

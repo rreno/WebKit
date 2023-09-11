@@ -33,6 +33,7 @@
 #import <WebKit/WKWebViewConfiguration.h>
 #import <WebKit/WKWebViewPrivate.h>
 #import <WebKit/WKWebsiteDataStorePrivate.h>
+#import <wtf/RefTracker.h>
 #import <wtf/RetainPtr.h>
 
 enum class ShouldSessionBeCloned : bool { No, Yes };

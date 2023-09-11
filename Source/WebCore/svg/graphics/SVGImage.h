@@ -29,6 +29,10 @@
 #include "Image.h"
 #include <wtf/URL.h>
 
+#if ENABLE(REF_TRACKING)
+#include <wtf/RefTracker.h>
+#endif
+
 namespace WebCore {
 
 class Element;
@@ -43,6 +47,12 @@ class SVGImageForContainer;
 class SVGImage final : public Image {
 public:
     static Ref<SVGImage> create(ImageObserver& observer) { return adoptRef(*new SVGImage(observer)); }
+
+#if ENABLE(REF_TRACKING)
+    RefTrackingToken trackRef() const { return RefTracker::sharedTracker().trackRef(); }
+    void trackDeref(RefTrackingToken token) const { return RefTracker::sharedTracker().trackDeref(token); }
+#endif
+
 
     RenderBox* embeddedContentBox() const;
     LocalFrameView* frameView() const;

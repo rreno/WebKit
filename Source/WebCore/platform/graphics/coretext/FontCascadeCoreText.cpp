@@ -33,6 +33,7 @@
 #include "RuntimeApplicationChecks.h"
 #include <pal/spi/cg/CoreGraphicsSPI.h>
 #include <wtf/MathExtras.h>
+#include <wtf/RefTracker.h>
 
 #include <pal/spi/cf/CoreTextSPI.h>
 

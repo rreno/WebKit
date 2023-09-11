@@ -26,9 +26,14 @@
 #pragma once
 
 #include <wtf/HashMap.h>
+#include <wtf/Lock.h>
 #include <wtf/RefDerefTraits.h>
 #include <wtf/Vector.h>
 #include <wtf/text/WTFString.h>
+
+#if USE(CF)
+#include <CoreFoundation/CoreFoundation.h>
+#endif
 
 namespace WTF {
 
@@ -41,17 +46,24 @@ public:
 
     WTF_EXPORT_PRIVATE static RefTracker& sharedTracker();
     WTF_EXPORT_PRIVATE static RefTracker& strongTracker();
+    WTF_EXPORT_PRIVATE static RefTracker& retainTracker();
     WTF_EXPORT_PRIVATE void showRemainingReferences() const;
-    WTF_EXPORT_PRIVATE void showBacktraceForToken(RefTrackingToken) const;
+//    WTF_EXPORT_PRIVATE void showBacktraceForToken(RefTrackingToken) const;
 
-    WTF_EXPORT_PRIVATE RefTrackingToken trackRef(const String& = nullString());
+    WTF_EXPORT_PRIVATE RefTrackingToken trackRef(const String& url = nullString());
     WTF_EXPORT_PRIVATE void trackDeref(RefTrackingToken);
 
 private:
     RefTrackingToken getNextRefToken();
+    size_t refBacktraceMapSize() const;
+    size_t untrackableDerefsSize() const;
 
-    HashMap<RefTrackingToken::ValueType, std::pair<String, std::unique_ptr<StackShot>>> m_refBacktraceMap;
-    Vector<std::unique_ptr<StackShot>> m_untrackableDerefs;
+    HashMap<RefTrackingToken::ValueType, std::pair<String, std::unique_ptr<StackShot>>> m_refBacktraceMap WTF_GUARDED_BY_LOCK(m_refBacktraceLock);
+    Vector<std::unique_ptr<StackShot>> m_untrackableDerefs WTF_GUARDED_BY_LOCK(m_untrackableDerefsLock);
+
+    // ThreadSafeRefCounted means we might ref/deref on another thread.
+    mutable Lock m_refBacktraceLock;
+    mutable Lock m_untrackableDerefsLock;
 };
 
 inline void RefTrackingTraits::ref(auto& object)
@@ -128,6 +140,38 @@ inline RefTrackingToken RefTrackingTraits::refTrackingToken() const
 inline void RefTrackingTraits::setRefTrackingToken(RefTrackingToken token)
 {
     m_refTrackingToken = token;
+}
+
+inline void RetainTrackingTraits::retainIfNotNull(auto* ptr)
+{
+    WTFLogAlways("RetainReleaseTraits(RefTracking) retainIfNotNull. %" PRIuPTR " (ptr)", (uintptr_t)ptr);
+    if (LIKELY(ptr != nullptr)) {
+        m_trackingToken = RefTracker::retainTracker().trackRef();
+        CFRetain(ptr);
+        return;
+    }
+
+    m_trackingToken = UntrackedRefToken();
+}
+
+inline void RetainTrackingTraits::releaseIfNotNull(auto* ptr)
+{
+    WTFLogAlways("RetainReleaseTraits(RefTracking) releaseIfNotNull. %" PRIuPTR " (ptr)"/* %u (token)"*/, (uintptr_t)ptr/*, m_refTrackingToken.value()*/);
+    if (LIKELY(ptr != nullptr)) {
+        RefTracker::retainTracker().trackDeref(std::exchange(m_trackingToken, UntrackedRefToken()));
+        CFRelease(ptr);
+    }
+}
+
+inline void RetainTrackingTraits::adopt(auto* ptr)
+{
+    WTFLogAlways("RetainReleaseTraits(RefTracking) adopt. %" PRIuPTR " (ptr)"/* %u (token)"*/, (uintptr_t)ptr/*, m_refTrackingToken.value()*/);
+    if (LIKELY(ptr != nullptr)) {
+        m_trackingToken = RefTracker::retainTracker().trackRef();
+        WTFLogAlways("    Retain Count: %u", (unsigned)((CFIndex)CFGetRetainCount(ptr)));
+        return;
+    }
+    m_trackingToken = UntrackedRefToken();
 }
 
 } // namespace WTF

@@ -28,6 +28,7 @@
 #include "ImageFrame.h"
 
 #include <wtf/Forward.h>
+#include <wtf/RefTracker.h>
 #include <wtf/RunLoop.h>
 #include <wtf/SynchronizedFixedQueue.h>
 #include <wtf/ThreadSafeWeakPtr.h>
@@ -56,6 +57,9 @@ public:
     {
         return adoptRef(*new ImageSource(WTFMove(nativeImage)));
     }
+
+    RefTrackingToken trackRef() const { return RefTracker::sharedTracker().trackRef(); }
+    void trackDeref(RefTrackingToken token) const { return RefTracker::sharedTracker().trackDeref(token); }
 
     void setData(FragmentedSharedBuffer* data, bool allDataReceived);
     void resetData(FragmentedSharedBuffer* data);

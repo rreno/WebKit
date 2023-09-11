@@ -28,6 +28,7 @@
 #include <cstddef>
 #include <wtf/HashTraits.h>
 #include <wtf/NeverDestroyed.h>
+#include <wtf/RefDerefTraits.h>
 
 #if USE(CF)
 #include <CoreFoundation/CoreFoundation.h>
@@ -64,33 +65,37 @@ namespace WTF {
 // Unlike most most of our smart pointers, RetainPtr can take either the pointer type or the pointed-to type,
 // so both RetainPtr<NSDictionary> and RetainPtr<CFDictionaryRef> will work.
 
-template<typename T> class RetainPtr;
+template<typename T, template <typename> typename RetainReleaseTraitsArg> class RetainPtr;
 
-template<typename T> constexpr RetainPtr<T> adoptCF(T CF_RELEASES_ARGUMENT) WARN_UNUSED_RETURN;
+template<typename T, template <typename> typename RetainReleaseTraitsArg = RetainReleaseTraits> constexpr RetainPtr<T, RetainReleaseTraitsArg> adoptCF(T CF_RELEASES_ARGUMENT) WARN_UNUSED_RETURN;
 
 #ifdef __OBJC__
 template<typename T> RetainPtr<typename RetainPtr<T>::HelperPtrType> adoptNS(T NS_RELEASES_ARGUMENT) WARN_UNUSED_RETURN;
 #endif
 
-template<typename T> class RetainPtr {
+template<typename T, template <typename> typename RetainReleaseTraitsArg>
+class RetainPtr : private RetainReleaseTraitsArg<T> {
 public:
     using ValueType = std::remove_pointer_t<T>;
     using PtrType = ValueType*;
+    using RetainReleaseBase = RetainReleaseTraitsArg<T>;
 
 #ifdef __OBJC__
     using HelperPtrType = typename std::conditional_t<std::is_convertible_v<T, id> && !std::is_same_v<T, id>, std::remove_pointer_t<T>, T>;
 #else
     using HelperPtrType = PtrType;
 #endif
+    
+    static constexpr bool isRefTracking = RefTracked<T>;
 
     RetainPtr() = default;
     RetainPtr(PtrType);
 
     RetainPtr(const RetainPtr&);
-    template<typename U> RetainPtr(const RetainPtr<U>&);
+    template<typename X, template <typename> typename Y> RetainPtr(const RetainPtr<X, Y>&);
 
-    constexpr RetainPtr(RetainPtr&& o) : m_ptr(toStorageType(o.leakRef())) { }
-    template<typename U> constexpr RetainPtr(RetainPtr<U>&& o) : m_ptr(toStorageType(checkType(o.leakRef()))) { }
+    constexpr RetainPtr(RetainPtr&& o): m_ptr(toStorageType(o.leakRef())) { RetainReleaseBase::take(o); }
+    template<typename X, template <typename> typename Y> constexpr RetainPtr(RetainPtr<X, Y>&& o) : m_ptr(toStorageType(checkType(o.leakRef()))) { }
 
     // Hash table deleted values, which are only constructed and never copied or destroyed.
     constexpr RetainPtr(HashTableDeletedValueType) : m_ptr(hashTableDeletedValue()) { }
@@ -104,12 +109,14 @@ public:
     template<typename U = T>
     std::enable_if_t<std::is_convertible_v<U, id>, PtrType> leakRef() NS_RETURNS_RETAINED WARN_UNUSED_RETURN {
         static_assert(std::is_same_v<T, U>, "explicit specialization not allowed");
+        RetainReleaseBase::leak(m_ptr);
         return fromStorageType(std::exchange(m_ptr, nullptr));
     }
 #else
     template<typename U = T>
     std::enable_if_t<std::is_same_v<U, id>, PtrType> leakRef() CF_RETURNS_RETAINED WARN_UNUSED_RETURN {
         static_assert(std::is_same_v<T, U>, "explicit specialization not allowed");
+        RetainReleaseBase::leak(m_ptr);
         return fromStorageType(std::exchange(m_ptr, nullptr));
     }
 #endif
@@ -117,6 +124,7 @@ public:
     template<typename U = T>
     std::enable_if_t<!std::is_convertible_v<U, id>, PtrType> leakRef() CF_RETURNS_RETAINED WARN_UNUSED_RETURN {
         static_assert(std::is_same_v<T, U>, "explicit specialization not allowed");
+        RetainReleaseBase::leak(m_ptr);
         return fromStorageType(std::exchange(m_ptr, nullptr));
     }
 
@@ -141,24 +149,30 @@ public:
     operator UnspecifiedBoolType() const { return m_ptr ? &RetainPtr::m_ptr : nullptr; }
 
     RetainPtr& operator=(const RetainPtr&);
-    template<typename U> RetainPtr& operator=(const RetainPtr<U>&);
+    template<typename X, template <typename> typename Y> RetainPtr& operator=(const RetainPtr<X, Y>&);
     RetainPtr& operator=(PtrType);
-    template<typename U> RetainPtr& operator=(U*);
+    template<typename X> RetainPtr& operator=(X*);
 
     RetainPtr& operator=(RetainPtr&&);
-    template<typename U> RetainPtr& operator=(RetainPtr<U>&&);
+    template<typename X, template <typename> typename Y> RetainPtr& operator=(RetainPtr<X, Y>&&);
 
     void swap(RetainPtr&);
 
-    template<typename U> friend constexpr RetainPtr<U> adoptCF(U CF_RELEASES_ARGUMENT) WARN_UNUSED_RETURN;
+    template<typename X, template <typename> typename Y> friend constexpr RetainPtr<X, Y> adoptCF(X CF_RELEASES_ARGUMENT) WARN_UNUSED_RETURN;
 
 #ifdef __OBJC__
     template<typename U> friend RetainPtr<typename RetainPtr<U>::HelperPtrType> adoptNS(U NS_RELEASES_ARGUMENT) WARN_UNUSED_RETURN;
 #endif
+    
+    RefTrackingToken trackingToken() const requires isRefTracking { return RetainReleaseBase::trackingToken(); }
+    void setTrackingToken(RefTrackingToken token) requires isRefTracking { RetainReleaseBase::setTrackingToken(token); }
 
 private:
     enum AdoptTag { Adopt };
-    constexpr RetainPtr(PtrType ptr, AdoptTag) : m_ptr(toStorageType(ptr)) { }
+    constexpr RetainPtr(PtrType ptr, AdoptTag) : m_ptr(toStorageType(ptr))
+    {
+        RetainReleaseBase::adopt(m_ptr);
+    }
 
     static constexpr PtrType checkType(PtrType ptr) { return ptr; }
 
@@ -192,37 +206,34 @@ template<typename T> RetainPtr(T) -> RetainPtr<std::remove_pointer_t<T>>;
 // Helper function for creating a RetainPtr using template argument deduction.
 template<typename T> RetainPtr<typename RetainPtr<T>::HelperPtrType> retainPtr(T) WARN_UNUSED_RETURN;
 
-template<typename T> inline RetainPtr<T>::~RetainPtr()
+template<typename T, template <typename> typename U> inline RetainPtr<T, U>::~RetainPtr()
 {
-    if (auto ptr = std::exchange(m_ptr, nullptr))
-        CFRelease(ptr);
+    RetainReleaseBase::releaseIfNotNull(std::exchange(m_ptr, nullptr));
 }
 
-template<typename T> inline RetainPtr<T>::RetainPtr(PtrType ptr)
+template<typename T, template <typename> typename U> inline RetainPtr<T, U>::RetainPtr(PtrType ptr)
     : m_ptr(toStorageType(ptr))
 {
-    if (m_ptr)
-        CFRetain(m_ptr);
+    RetainReleaseBase::retainIfNotNull(m_ptr);
 }
 
-template<typename T> inline RetainPtr<T>::RetainPtr(const RetainPtr& o)
+template<typename T, template <typename> typename U> inline RetainPtr<T, U>::RetainPtr(const RetainPtr& o)
     : RetainPtr(o.get())
 {
 }
 
-template<typename T> template<typename U> inline RetainPtr<T>::RetainPtr(const RetainPtr<U>& o)
+template<typename T, template <typename> typename U> template<typename X, template <typename> typename Y> inline RetainPtr<T, U>::RetainPtr(const RetainPtr<X, Y>& o)
     : RetainPtr(o.get())
 {
 }
 
-template<typename T> inline void RetainPtr<T>::clear()
+template<typename T, template <typename> typename U> inline void RetainPtr<T, U>::clear()
 {
-    if (auto ptr = std::exchange(m_ptr, nullptr))
-        CFRelease(ptr);
+    RetainReleaseBase::releaseIfNotNull(std::exchange(m_ptr, nullptr));
 }
 
 #if HAVE(CFAUTORELEASE)
-template<typename T> inline auto RetainPtr<T>::autorelease() -> PtrType
+template<typename T, template <typename> typename U> inline auto RetainPtr<T, U>::autorelease() -> PtrType
 {
 #ifdef __OBJC__
     if constexpr (std::is_convertible_v<PtrType, id>)
@@ -237,7 +248,7 @@ template<typename T> inline auto RetainPtr<T>::autorelease() -> PtrType
 #ifdef __OBJC__
 
 // FIXME: It would be better if we could base the return type on the type that is toll-free bridged with T rather than using id.
-template<typename T> inline id RetainPtr<T>::bridgingAutorelease()
+template<typename T, template <typename> typename U> inline id RetainPtr<T, U>::bridgingAutorelease()
 {
     static_assert(!std::is_convertible_v<PtrType, id>, "Don't use bridgingAutorelease for Objective-C pointer types.");
     return CFBridgingRelease(leakRef());
@@ -245,79 +256,85 @@ template<typename T> inline id RetainPtr<T>::bridgingAutorelease()
 
 #endif
 
-template<typename T> inline RetainPtr<T>& RetainPtr<T>::operator=(const RetainPtr& o)
+template<typename T, template <typename> typename U> inline RetainPtr<T, U>& RetainPtr<T, U>::operator=(const RetainPtr& o)
 {
     RetainPtr ptr = o;
     swap(ptr);
     return *this;
 }
 
-template<typename T> template<typename U> inline RetainPtr<T>& RetainPtr<T>::operator=(const RetainPtr<U>& o)
+template<typename T, template <typename> typename U>
+template<typename X, template <typename> typename Y>
+inline RetainPtr<T, U>& RetainPtr<T, U>::operator=(const RetainPtr<X, Y>& o)
 {
     RetainPtr ptr = o;
     swap(ptr);
     return *this;
 }
 
-template<typename T> inline RetainPtr<T>& RetainPtr<T>::operator=(PtrType optr)
+template<typename T, template <typename> typename U> inline RetainPtr<T, U>& RetainPtr<T, U>::operator=(PtrType optr)
 {
     RetainPtr ptr = optr;
     swap(ptr);
     return *this;
 }
 
-template<typename T> template<typename U> inline RetainPtr<T>& RetainPtr<T>::operator=(U* optr)
+template<typename T, template  <typename> typename U> template<typename X> inline RetainPtr<T, U>& RetainPtr<T, U>::operator=(X* optr)
 {
     RetainPtr ptr = optr;
     swap(ptr);
     return *this;
 }
 
-template<typename T> inline RetainPtr<T>& RetainPtr<T>::operator=(RetainPtr&& o)
+template<typename T, template <typename> typename U> inline RetainPtr<T, U>& RetainPtr<T, U>::operator=(RetainPtr&& o)
 {
     RetainPtr ptr = WTFMove(o);
     swap(ptr);
     return *this;
 }
 
-template<typename T> template<typename U> inline RetainPtr<T>& RetainPtr<T>::operator=(RetainPtr<U>&& o)
+template<typename T, template <typename> typename U>
+template<typename X, template <typename> typename Y>
+inline RetainPtr<T, U>& RetainPtr<T, U>::operator=(RetainPtr<X, Y>&& o)
 {
     RetainPtr ptr = WTFMove(o);
     swap(ptr);
     return *this;
 }
 
-template<typename T> inline void RetainPtr<T>::swap(RetainPtr& o)
+template<typename T, template <typename> typename U> inline void RetainPtr<T, U>::swap(RetainPtr& o)
 {
     std::swap(m_ptr, o.m_ptr);
+    RetainReleaseBase::swap(o);
 }
 
-template<typename T> inline void swap(RetainPtr<T>& a, RetainPtr<T>& b)
+template<typename T, template <typename> typename U> inline void swap(RetainPtr<T, U>& a, RetainPtr<T, U>& b)
 {
     a.swap(b);
 }
 
-template<typename T, typename U> constexpr bool operator==(const RetainPtr<T>& a, const RetainPtr<U>& b)
+template<typename T, template <typename> typename U, typename X, template <typename> typename Y>
+constexpr bool operator==(const RetainPtr<T, U>& a, const RetainPtr<X, Y>& b)
 { 
     return a.get() == b.get(); 
 }
 
-template<typename T, typename U> constexpr bool operator==(const RetainPtr<T>& a, U* b)
+template<typename T, template <typename> typename U, typename X> constexpr bool operator==(const RetainPtr<T, U>& a, X* b)
 {
     return a.get() == b; 
 }
 
-template<typename T, typename U> constexpr bool operator==(T* a, const RetainPtr<U>& b)
+template<typename T, typename X, template <typename> typename Y> constexpr bool operator==(T* a, const RetainPtr<X, Y>& b)
 {
     return a == b.get(); 
 }
 
-template<typename T> constexpr RetainPtr<T> adoptCF(T CF_RELEASES_ARGUMENT ptr)
+template<typename T, template <typename> typename U> constexpr RetainPtr<T, U> adoptCF(T CF_RELEASES_ARGUMENT ptr)
 {
 #ifdef __OBJC__
     static_assert(!std::is_convertible_v<T, id>, "Don't use adoptCF with Objective-C pointer types, use adoptNS.");
 #endif
-    return RetainPtr<T>(ptr, RetainPtr<T>::Adopt);
+    return RetainPtr<T, U>(ptr, RetainPtr<T, U>::Adopt);
 }
 
 #ifdef __OBJC__
@@ -392,6 +409,18 @@ template<typename T> T* dynamic_objc_cast(id object)
     return reinterpret_cast<T*>(object);
 }
 #endif
+
+template <typename T> inline void RetainReleaseTraits<T>::retainIfNotNull(auto* ptr)
+{
+    if (LIKELY(ptr != nullptr))
+        CFRetain(ptr);
+}
+
+template <typename T> inline void RetainReleaseTraits<T>::releaseIfNotNull(auto* ptr)
+{
+    if (LIKELY(ptr != nullptr))
+        CFRelease(ptr);
+}
 
 } // namespace WTF
 

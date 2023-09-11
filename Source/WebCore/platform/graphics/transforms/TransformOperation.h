@@ -30,6 +30,7 @@
 #include <wtf/EnumTraits.h>
 #include <wtf/Forward.h>
 #include <wtf/RefCounted.h>
+#include <wtf/RefTracker.h>
 #include <wtf/TypeCasts.h>
 
 namespace WebCore {

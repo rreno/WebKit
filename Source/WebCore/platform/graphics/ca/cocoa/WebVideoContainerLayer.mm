@@ -25,6 +25,7 @@
 
 #import "config.h"
 #import "WebVideoContainerLayer.h"
+#import <wtf/RefTracker.h>
 
 @implementation WebVideoContainerLayer
 - (void)setPlayerLayer:(AVPlayerLayer *)playerLayer

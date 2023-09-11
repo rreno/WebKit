@@ -27,6 +27,7 @@
 
 #include <type_traits>
 #include <wtf/ASCIICType.h>
+#include <wtf/RefTracker.h>
 #include <wtf/text/WTFString.h>
 
 #if ASSERT_ENABLED

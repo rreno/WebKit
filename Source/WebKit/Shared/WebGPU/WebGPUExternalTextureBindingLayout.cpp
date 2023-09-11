@@ -31,6 +31,7 @@
 #include "WebGPUConvertFromBackingContext.h"
 #include "WebGPUConvertToBackingContext.h"
 #include <WebCore/WebGPUExternalTextureBindingLayout.h>
+#include <wtf/RefTracker.h>
 
 namespace WebKit::WebGPU {
 

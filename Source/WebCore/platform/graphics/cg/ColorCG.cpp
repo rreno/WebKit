@@ -34,6 +34,7 @@
 #include <pal/spi/cg/CoreGraphicsSPI.h>
 #include <wtf/Assertions.h>
 #include <wtf/Lock.h>
+#include <wtf/RefTracker.h>
 #include <wtf/RetainPtr.h>
 #include <wtf/StdLibExtras.h>
 #include <wtf/TinyLRUCache.h>

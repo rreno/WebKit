@@ -31,6 +31,10 @@
 #include "Image.h"
 #include "RuntimeApplicationChecks.h"
 
+#if ENABLE(REF_TRACKING)
+#include <wtf/RefTracker.h>
+#endif
+
 #if USE(CG)
 
 #if PLATFORM(MAC)
@@ -55,6 +59,11 @@ public:
 
     unsigned cachedSubimageCreateCountForTesting() const { return m_cachedSubimageCreateCountForTesting; }
     unsigned cachedSubimageDrawCountForTesting() const { return m_cachedSubimageDrawCountForTesting; }
+
+#if ENABLE(REF_TRACKING)
+    RefTrackingToken trackRef() const { return RefTracker::sharedTracker().trackRef(); }
+    void trackDeref(RefTrackingToken token) const { return RefTracker::sharedTracker().trackDeref(token); }
+#endif
 
 private:
     PDFDocumentImage(ImageObserver*);

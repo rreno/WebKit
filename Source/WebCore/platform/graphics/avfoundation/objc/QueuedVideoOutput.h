@@ -32,6 +32,7 @@
 #include <wtf/MediaTime.h>
 #include <wtf/Observer.h>
 #include <wtf/RefCounted.h>
+#include <wtf/RefTracker.h>
 #include <wtf/RetainPtr.h>
 #include <wtf/StdMap.h>
 #include <wtf/WeakHashSet.h>

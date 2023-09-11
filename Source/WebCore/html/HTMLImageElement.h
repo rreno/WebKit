@@ -58,6 +58,9 @@ public:
 
     using HTMLElement::ref;
     using HTMLElement::deref;
+    
+    RefTrackingToken trackRef() final { return RefTracker::sharedTracker().trackRef(); }
+    void trackDeref(RefTrackingToken token) final { return RefTracker::sharedTracker().trackDeref(token); }
 
     void formOwnerRemovedFromTree(const Node& formRoot);
 

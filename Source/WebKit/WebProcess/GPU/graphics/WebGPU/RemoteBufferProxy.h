@@ -31,6 +31,7 @@
 #include "WebGPUIdentifier.h"
 #include <WebCore/WebGPUBuffer.h>
 #include <wtf/Deque.h>
+#include <wtf/RefTracker.h>
 
 namespace WebKit::WebGPU {
 

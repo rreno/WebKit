@@ -82,7 +82,10 @@ class Image : public RefCounted<Image> {
     friend class GraphicsContext;
 public:
     virtual ~Image();
-    
+
+    RefTrackingToken trackRef() const { return RefTracker::sharedTracker().trackRef(); }
+    void trackDeref(RefTrackingToken token) const { return RefTracker::sharedTracker().trackDeref(token); }
+
     WEBCORE_EXPORT static Ref<Image> loadPlatformResource(const char* name);
     WEBCORE_EXPORT static RefPtr<Image> create(ImageObserver&);
     WEBCORE_EXPORT static bool supportsType(const String&);

@@ -54,7 +54,12 @@ public:
     template<typename X, typename Y, template <typename> typename Z> RefPtr(const RefPtr<X, Y, Z>& o) : m_ptr(o.get()) { /*WTFLogAlways("RefPtr templated copy ctor.");*/ RefDerefBase::refIfNotNull(PtrTraits::unwrap(m_ptr)); }
 
     ALWAYS_INLINE RefPtr(RefPtr&& o) : m_ptr(o.leakRef()) { /*WTFLogAlways("RefPtr move ctor.");*/ RefDerefBase::takeRef(o); }
-    template<typename X, typename Y, template <typename> typename Z> RefPtr(RefPtr<X, Y, Z>&& o) : m_ptr(o.leakRef()) { /*WTFLogAlways("RefPtr templated move ctor.");*/ RefDerefBase::takeRef(o); }
+    template<typename X, typename Y, template <typename> typename Z> RefPtr(RefPtr<X, Y, Z>&& o)
+    {
+        /*WTFLogAlways("RefPtr templated move ctor.");*/
+        RefDerefBase::takeRef(o);
+        m_ptr = o.leakRef();
+    }
 
     template <typename X, typename Y, template <typename> typename Z> RefPtr(Ref<X, Y, Z>&&);
 
@@ -320,7 +325,7 @@ inline RefPtr<Target> downcast(RefPtr<Source, PtrTraitsArg, RefDerefTraitsArg> s
     return static_pointer_cast<Target>(WTFMove(source));
 }
 
-template <typename Target, typename Source, typename TargetPtrTraits = RawPtrTraits<Target>, template <typename> typename TargetRefDerefTraits = RefDerefTraits, typename SourcePtrTraits, typename SourceRefDerefTraits>
+template <typename Target, typename Source, typename TargetPtrTraits = RawPtrTraits<Target>, template <typename> typename TargetRefDerefTraits = RefDerefTraits, typename SourcePtrTraits, template <typename> typename SourceRefDerefTraits>
 inline RefPtr<Target, TargetPtrTraits, TargetRefDerefTraits> dynamicDowncast(RefPtr<Source, SourcePtrTraits, SourceRefDerefTraits> source)
 {
     static_assert(!std::is_same_v<Source, Target>, "Unnecessary cast to same type");

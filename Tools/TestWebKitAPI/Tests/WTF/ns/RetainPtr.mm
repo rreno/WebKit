@@ -29,6 +29,10 @@
 #import "config.h"
 #import <wtf/RetainPtr.h>
 
+#if ENABLE(REF_TRACKING)
+#include <wtf/RefTracker.h>
+#endif
+
 #if __has_feature(objc_arc)
 #ifndef RETAIN_PTR_TEST_NAME
 #error This tests RetainPtr.h with ARC disabled.
@@ -48,6 +52,7 @@
 #else
 #define AUTORELEASEPOOL_FOR_ARC_DEBUG
 #endif
+
 
 namespace TestWebKitAPI {
 

@@ -30,6 +30,7 @@
 #include "GraphicsContext.h"
 #include "ImageBuffer.h"
 #include "Theme.h"
+#include <wtf/RefTracker.h>
 #include <wtf/text/TextStream.h>
 
 namespace WebCore {

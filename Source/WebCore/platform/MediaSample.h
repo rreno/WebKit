@@ -33,6 +33,7 @@
 #include <wtf/EnumTraits.h>
 #include <wtf/MediaTime.h>
 #include <wtf/PrintStream.h>
+#include <wtf/RefTracker.h>
 #include <wtf/ThreadSafeRefCounted.h>
 #include <wtf/text/AtomString.h>
 
@@ -114,6 +115,16 @@ public:
     bool hasAlpha() const { return flags() & HasAlpha; }
     bool hasSyncInfo() const { return flags() & HasSyncInfo; }
     bool isProtected() const { return flags() & IsProtected; }
+    
+    RefTrackingToken trackRef() const
+    {
+        return RefTracker::sharedTracker().trackRef();
+    }
+    
+    void trackDeref(RefTrackingToken token) const
+    {
+        RefTracker::sharedTracker().trackDeref(token);
+    }
 
     virtual void dump(PrintStream& out) const
     {

@@ -28,6 +28,7 @@
 #include "RenderingResourceIdentifier.h"
 #include <wtf/CheckedPtr.h>
 #include <wtf/HashSet.h>
+#include <wtf/RefTracker.h>
 #include <wtf/ThreadSafeWeakPtr.h>
 
 namespace WebCore {
@@ -83,6 +84,9 @@ public:
         ASSERT(hasValidRenderingResourceIdentifier());
         m_observers.remove(&observer);
     }
+        
+    RefTrackingToken trackRef() const { return RefTracker::sharedTracker().trackRef(); }
+    void trackDeref(RefTrackingToken token) const { RefTracker::sharedTracker().trackDeref(token); }
 
 protected:
     RenderingResource(std::optional<RenderingResourceIdentifier> renderingResourceIdentifier)

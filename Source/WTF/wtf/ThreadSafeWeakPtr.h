@@ -145,6 +145,7 @@ private:
     mutable void* m_object WTF_GUARDED_BY_LOCK(m_lock) { nullptr };
 };
 
+template <typename>
 struct ThreadSafeWeakPtrControlBlockRefDerefTraits {
     static ALWAYS_INLINE ThreadSafeWeakPtrControlBlock* refIfNotNull(ThreadSafeWeakPtrControlBlock* ptr)
     {
@@ -158,6 +159,10 @@ struct ThreadSafeWeakPtrControlBlockRefDerefTraits {
         if (LIKELY(ptr))
             ptr->weakDeref();
     }
+
+    static void adoptRef(auto*) { }
+    static void swapRef(SmartPtr auto&) { }
+    static void takeRef(SmartPtr auto&) { }
 };
 using ControlBlockRefPtr = RefPtr<ThreadSafeWeakPtrControlBlock, RawPtrTraits<ThreadSafeWeakPtrControlBlock>, ThreadSafeWeakPtrControlBlockRefDerefTraits>;
 

@@ -87,6 +87,11 @@ void Page::platformInitialize()
                 WTFLogAlways("%s %p %" PRIu64 "-%s (refCount %d, referencingNodeCount %d) %s", documentType, document, document->identifier().processIdentifier().toUInt64(), document->identifier().toString().utf8().data(), document->refCount(), document->referencingNodeCount(), document->url().string().utf8().data());
             }
         });
+        
+        PAL::registerNotifyCallback("com.apple.WebKit.dumpNodeStatistics"_s, [] {
+            WTFLogAlways("------ Node Statistics ------");
+            Node::dumpStatistics();
+        });
 
         PAL::registerNotifyCallback("com.apple.WebKit.showRemainingReferences"_s, [] {
             for (const auto* document : Document::allDocuments()) {
@@ -99,6 +104,9 @@ void Page::platformInitialize()
             
             WTFLogAlways("------ RefTracking - JSC::Strong tracker -------- ");
             RefTracker::strongTracker().showRemainingReferences();
+
+            WTFLogAlways("------ RefTracking - RetainPtr tracker -------- ");
+            RefTracker::retainTracker().showRemainingReferences();
         });
     });
 }

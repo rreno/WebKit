@@ -29,6 +29,7 @@
 #if HAVE(QUICKLOOK_PREVIEW_ITEM_DATA_PROVIDER)
 
 #import "WebPageProxy.h"
+#import <wtf/RefTracker.h>
 #import <wtf/RetainPtr.h>
 #import <wtf/URL.h>
 #import <pal/mac/QuickLookUISoftLink.h>

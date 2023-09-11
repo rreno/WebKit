@@ -336,6 +336,9 @@ void Node::dumpStatistics()
     printf("  Number of Elements with attribute storage: %zu [%zu]\n", elementsWithAttributeStorage, sizeof(ElementData));
     printf("  Number of Elements with RareData: %zu\n", elementsWithRareData);
     printf("  Number of Elements with NamedNodeMap: %zu [%zu]\n", elementsWithNamedNodeMap, sizeof(NamedNodeMap));
+    fflush(stdout);
+#else
+    printf("Did not compile with DUMP_NODE_STATISTICS");
 #endif
 }
 

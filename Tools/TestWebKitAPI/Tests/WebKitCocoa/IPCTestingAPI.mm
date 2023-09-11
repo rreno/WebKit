@@ -37,6 +37,7 @@
 #import <WebKit/_WKFeature.h>
 #import <WebKit/_WKRemoteObjectInterface.h>
 #import <WebKit/_WKRemoteObjectRegistry.h>
+#import <wtf/RefTracker.h>
 #import <wtf/RetainPtr.h>
 
 static bool didCrash = false;

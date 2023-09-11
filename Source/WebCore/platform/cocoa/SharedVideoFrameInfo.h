@@ -28,6 +28,7 @@
 #if ENABLE(VIDEO) && PLATFORM(COCOA)
 
 #include <span>
+#include <wtf/RefTracker.h>
 #include <wtf/RetainPtr.h>
 
 typedef struct __CVBuffer* CVPixelBufferRef;

@@ -201,7 +201,7 @@ template<typename T> struct HashTraits<UniqueRef<T>> : SimpleClassHashTraits<Uni
     static TakeType take(std::nullptr_t) { return nullptr; }
 };
 
-template<typename P, typename Q, typename R> struct HashTraits<RefPtr<P, Q, R>> : SimpleClassHashTraits<RefPtr<P, Q, R>> {
+template<typename P, typename Q, template <typename> typename R> struct HashTraits<RefPtr<P, Q, R>> : SimpleClassHashTraits<RefPtr<P, Q, R>> {
     static P* emptyValue() { return nullptr; }
 
     using PeekType = P*;
