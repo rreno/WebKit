@@ -34,8 +34,10 @@
 #import "GPUProcessCreationParameters.h"
 #import "Logging.h"
 #import "RemoteRenderingBackend.h"
+#import <pal/Logging.h>
 #import <pal/spi/cocoa/AVFoundationSPI.h>
 #import <pal/spi/cocoa/MetalSPI.h>
+#import <wtf/RefTracker.h>
 #import <wtf/RetainPtr.h>
 #import <wtf/cocoa/SpanCocoa.h>
 
@@ -95,6 +97,10 @@ void GPUProcess::ensureAVCaptureServerConnection()
 
 void GPUProcess::platformInitializeGPUProcess(GPUProcessCreationParameters& parameters)
 {
+    PAL::registerNotifyCallback("com.apple.WebKit.GPU.showRemainingReferences"_s, [] {
+        WTFLogAlways("-------- RefTracker (shared) %u Remaining References --------", RefTracker::sharedTracker().trackedReferencesCount());
+        RefTracker::sharedTracker().showRemainingReferences();
+    });
 #if PLATFORM(MAC)
     auto launchServicesExtension = SandboxExtension::create(WTFMove(parameters.launchServicesExtensionHandle));
     if (launchServicesExtension) {

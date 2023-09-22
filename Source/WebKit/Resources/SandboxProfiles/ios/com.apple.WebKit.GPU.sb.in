@@ -58,6 +58,7 @@
         "com.apple.CFPreferences._domainsChangedExternally"
         "com.apple.Metal.AGXEnableOSSignposts"
         "com.apple.WebKit.LibraryPathDiagnostics"
+        "com.apple.WebKit.GPU.showRemainingReferences"
         "com.apple.gpumemd.check_in_request"
         "com.apple.mobile.keybagd.user_changed"
         "com.apple.system.logging.prefschanged"

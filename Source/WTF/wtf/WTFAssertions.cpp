@@ -37,14 +37,21 @@
 namespace WTF {
 
 namespace {
-struct DummyStruct { };
+struct EmptyStruct { };
 }
 
-static_assert(sizeof(Bag<DummyStruct>) == sizeof(void*));
+static_assert(sizeof(Bag<EmptyStruct>) == sizeof(void*));
 
-static_assert(sizeof(Ref<DummyStruct>) == sizeof(DummyStruct*));
+static_assert(sizeof(Ref<EmptyStruct>) == sizeof(EmptyStruct*));
 
-static_assert(sizeof(RefPtr<DummyStruct>) == sizeof(DummyStruct*));
+static_assert(sizeof(RefPtr<EmptyStruct>) == sizeof(EmptyStruct*));
+
+// C++ concepts will fail silently if a member variable isn't present. Assert we have
+// Ref/RefPtr isRef/isRefPtr defined so any code relying on concepts defined in terms of
+// these member variables works as expected.
+static_assert(Ref<EmptyStruct>::isRef, "Ref<T>::isRef needed for SmartPtr concepts.");
+
+static_assert(RefPtr<EmptyStruct>::isRefPtr, "RefPtr<T>::isRefPtr needed for SmartPtr concepts.");
 
 #if OS(DARWIN) && CPU(ADDRESS64)
 // NaN boxing encoding relies on this.

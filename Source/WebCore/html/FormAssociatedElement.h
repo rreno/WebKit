@@ -30,6 +30,11 @@ public:
     void ref() const { refFormAssociatedElement(); }
     void deref() const { derefFormAssociatedElement(); }
 
+    #if ENABLE(REF_TRACKING)
+    RefTrackingToken trackRef() const { return RefTracker::sharedTracker().trackRef(); }
+    void trackDeref(RefTrackingToken token) const { return RefTracker::sharedTracker().trackDeref(token); }
+    #endif
+
     virtual ~FormAssociatedElement() { RELEASE_ASSERT(!m_form); }
     virtual HTMLElement& asHTMLElement() = 0;
     virtual const HTMLElement& asHTMLElement() const = 0;

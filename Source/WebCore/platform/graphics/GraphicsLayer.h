@@ -285,6 +285,9 @@ public:
         LayerHostingContextId
     };
 
+    RefTrackingToken trackRef() const { return RefTracker::sharedTracker().trackRef(); }
+    void trackDeref(RefTrackingToken token) const { RefTracker::sharedTracker().trackDeref(token); }
+
     virtual LayerMode layerMode() const { return LayerMode::PlatformLayer; }
     
     WEBCORE_EXPORT static Ref<GraphicsLayer> create(GraphicsLayerFactory*, GraphicsLayerClient&, Type = Type::Normal);

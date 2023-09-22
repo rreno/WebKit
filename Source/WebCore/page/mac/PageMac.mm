@@ -39,6 +39,7 @@
 #import "SVGDocument.h"
 #import "SVGElementTypeHelpers.h"
 #import <pal/Logging.h>
+#import <wtf/RefTracker.h>
 
 #if PLATFORM(IOS_FAMILY)
 #import "WebCoreThreadInternal.h"
@@ -85,6 +86,18 @@ void Page::platformInitialize()
                 const char* documentType = is<SVGDocument>(document.get()) ? "SVGDocument" : "Document";
                 WTFLogAlways("%s %p %" PRIu64 "-%s (refCount %d, referencingNodeCount %d) %s", documentType, document.ptr(), document->identifier().processIdentifier().toUInt64(), document->identifier().toString().utf8().data(), document->refCount(), document->referencingNodeCount(), document->url().string().utf8().data());
             }
+        });
+
+        PAL::registerNotifyCallback("com.apple.WebKit.WebContent.showRemainingReferences"_s, [] {
+            WTFLogAlways("-------- RefTracker (document) %u Remaining References --------", RefTracker::documentTracker().trackedReferencesCount());
+            RefTracker::documentTracker().showRemainingReferences();
+            WTFLogAlways("-------- RefTracker (shared) %u Remaining References --------", RefTracker::sharedTracker().trackedReferencesCount());
+            RefTracker::sharedTracker().showRemainingReferences();
+        });
+
+        PAL::registerNotifyCallback("com.apple.WebKit.WebContent.showUntrackedDerefs"_s, [] {
+            WTFLogAlways("-------- RefTracker Untracked Derefs --------");
+            RefTracker::sharedTracker().showRemainingReferences();
         });
     });
 }

@@ -80,6 +80,7 @@
 #import <wtf/BlockPtr.h>
 #import <wtf/FileSystem.h>
 #import <wtf/ProcessPrivilege.h>
+#import <wtf/RefTracker.h>
 #import <wtf/SoftLinking.h>
 #import <wtf/StdLibExtras.h>
 #import <wtf/cf/TypeCastsCF.h>
@@ -322,6 +323,11 @@ void WebProcessPool::platformInitialize(NeedsGlobalStaticInitialization needsGlo
     // and you can only have one WebCore::MemoryPressureHandler.
     if (![[NSUserDefaults standardUserDefaults] boolForKey:@"WebKitSuppressMemoryPressureHandler"])
         installMemoryPressureHandler();
+
+    PAL::registerNotifyCallback("com.apple.WebKit.UI.showRemainingReferences"_s, [] {
+        WTFLogAlways("-------- RefTracker (shared) %u Remaining References --------", RefTracker::sharedTracker().trackedReferencesCount());
+        RefTracker::sharedTracker().showRemainingReferences();
+    });
 
 #if PLATFORM(IOS_FAMILY) && !PLATFORM(MACCATALYST)
     if (!_MGCacheValid()) {
@@ -744,6 +750,59 @@ void WebProcessPool::registerNotificationObservers()
 #define WK_NOTIFICATION(name) name ## _s,
     const Vector<ASCIILiteral> notificationMessages = {
 #include "Resources/cocoa/NotificationAllowList/ForwardedNotifications.def"
+        // Keep in sync with notify_entitlements() in process-entitlements.sh.
+        // FORWARDED_NOTIFICATIONS
+        "_AXNotification_shouldPerformValidationsAtRuntime"_s,
+        "_NS_ctasd"_s,
+        "AppleDatePreferencesChangedNotification"_s,
+        "AppleLanguagePreferencesChangedNotification"_s,
+        "AppleNumberPreferencesChangedNotification"_s,
+        "AppleTextBehaviorPreferencesChangedNotification"_s,
+        "AppleTimePreferencesChangedNotification"_s,
+        "LetterFeedbackEnabled.notification"_s,
+        "PhoneticFeedbackEnabled.notification"_s,
+        "QuickTypePredictionFeedbackEnabled.notification"_s,
+        "com.apple.CFPreferences._domainsChangedExternally"_s,
+        "com.apple.WebKit.LibraryPathDiagnostics"_s,
+        "com.apple.WebKit.deleteAllCode"_s,
+        "com.apple.WebKit.dumpGCHeap"_s,
+        "com.apple.WebKit.dumpUntrackedMallocs"_s,
+        "com.apple.WebKit.fullGC"_s,
+        "com.apple.WebKit.logMemStats"_s,
+        "com.apple.WebKit.logPageState"_s,
+        "com.apple.WebKit.showAllDocuments"_s,
+        "com.apple.WebKit.showBackForwardCache"_s,
+        "com.apple.WebKit.showGraphicsLayerTree"_s,
+        "com.apple.WebKit.showLayerTree"_s,
+        "com.apple.WebKit.showLayoutTree"_s,
+        "com.apple.WebKit.showMemoryCache"_s,
+        "com.apple.WebKit.showPaintOrderTree"_s,
+        "com.apple.WebKit.showRenderTree"_s,
+        "com.apple.accessibility.defaultrouteforcall"_s,
+        "com.apple.analyticsd.running"_s,
+        "com.apple.coreaudio.list_components"_s,
+        "com.apple.distnote.locale_changed"_s,
+        "com.apple.WebKit.WebContent.showRemainingReferences"_s,
+        "com.apple.WebKit.WebContent.showUntrackedDerefs"_s,
+        "com.apple.WebKit.GPU.showRemainingReferences"_s,
+        "com.apple.language.changed"_s,
+        "com.apple.mediaaccessibility.audibleMediaSettingsChanged"_s,
+        "com.apple.mediaaccessibility.captionAppearanceSettingsChanged"_s,
+        "com.apple.powerlog.state_changed"_s,
+        "com.apple.system.logging.prefschanged"_s,
+        "com.apple.system.lowpowermode"_s,
+        "com.apple.system.networkd.settings"_s,
+        "com.apple.system.timezone"_s,
+        "com.apple.webinspectord.automatic_inspection_enabled"_s,
+        "com.apple.webinspectord.available"_s,
+        "com.apple.zoomwindow"_s,
+        "org.WebKit.lowMemory"_s,
+        "org.WebKit.lowMemory.begin"_s,
+        "org.WebKit.lowMemory.end"_s,
+        "org.WebKit.memoryWarning"_s,
+        "org.WebKit.memoryWarning.begin"_s,
+        "org.WebKit.memoryWarning.end"_s,
+
 #if PLATFORM(MAC)
 #include "Resources/cocoa/NotificationAllowList/MacForwardedNotifications.def"
 #else
