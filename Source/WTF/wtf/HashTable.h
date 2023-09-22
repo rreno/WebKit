@@ -673,7 +673,9 @@ DECLARE_ALLOCATOR_WITH_HEAP_IDENTIFIER(HashTable);
     template<typename HashTranslator, typename T>
     ALWAYS_INLINE auto HashTable<Key, Value, Extractor, HashFunctions, Traits, KeyTraits, shouldValidateKey>::inlineLookup(const T& key) -> ValueType*
     {
+#if !ENABLE(REF_TRACKING)
         static_assert(sizeof(Value) <= 150, "Your HashTable types are too big to efficiently move when rehashing.  Consider using UniqueRef instead");
+#endif
         checkKey<HashTranslator>(key);
 
         ValueType* table = m_table;

@@ -27,6 +27,7 @@
 
 #include "FloatRoundedRect.h"
 #include "GraphicsLayer.h"
+#include <wtf/RefTracker.h>
 #include <wtf/RetainPtr.h>
 #include <wtf/ThreadSafeRefCounted.h>
 #include <wtf/TypeCasts.h>
@@ -99,6 +100,9 @@ public:
     virtual Ref<PlatformCALayer> clone(PlatformCALayerClient*) const = 0;
 
     virtual ~PlatformCALayer();
+
+    RefTrackingToken trackRef() const { return RefTracker::sharedTracker().trackRef(); }
+    void trackDeref(RefTrackingToken token) const { RefTracker::sharedTracker().trackDeref(token); }
 
     PlatformLayerIdentifier layerID() const { return m_layerID; }
     virtual std::optional<WebCore::LayerHostingContextIdentifier> hostingContextIdentifier() const { return std::nullopt; }

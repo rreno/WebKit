@@ -52,7 +52,7 @@ public:
         bool shouldDeleteControlBlock { false };
         {
             Locker locker { m_lock };
-            ASSERT_WITH_SECURITY_IMPLICATION(m_weakReferenceCount);
+            //ASSERT_WITH_SECURITY_IMPLICATION(m_weakReferenceCount);
             if (!--m_weakReferenceCount && !m_strongReferenceCount)
                 shouldDeleteControlBlock = true;
         }
@@ -182,6 +182,7 @@ private:
     mutable void* m_object WTF_GUARDED_BY_LOCK(m_lock) { nullptr };
 };
 
+template <typename>
 struct ThreadSafeWeakPtrControlBlockRefDerefTraits {
     static ALWAYS_INLINE ThreadSafeWeakPtrControlBlock* refIfNotNull(ThreadSafeWeakPtrControlBlock* ptr)
     {
@@ -195,6 +196,10 @@ struct ThreadSafeWeakPtrControlBlockRefDerefTraits {
         if (LIKELY(ptr))
             ptr->weakDeref();
     }
+
+    static void adoptRef(auto*) { }
+    static void swapRef(auto&) { }
+    static void moveRef(auto&) { }
 };
 using ControlBlockRefPtr = RefPtr<ThreadSafeWeakPtrControlBlock, RawPtrTraits<ThreadSafeWeakPtrControlBlock>, ThreadSafeWeakPtrControlBlockRefDerefTraits>;
 

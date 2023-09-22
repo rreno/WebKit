@@ -39,6 +39,7 @@
 #include "Timer.h"
 #include <wtf/RefCountedAndCanMakeWeakPtr.h>
 #include <wtf/RefPtr.h>
+#include <wtf/RefTracker.h>
 #include <wtf/RetainPtr.h>
 #include <wtf/TypeCasts.h>
 #include <wtf/text/WTFString.h>
@@ -61,6 +62,9 @@ class Image : public RefCountedAndCanMakeWeakPtr<Image> {
     friend class GraphicsContext;
 public:
     virtual ~Image();
+
+    RefTrackingToken trackRef() const { return RefTracker::sharedTracker().trackRef(); }
+    void trackDeref(RefTrackingToken token) const { RefTracker::sharedTracker().trackDeref(token); }
     
     WEBCORE_EXPORT static RefPtr<Image> create(ImageObserver&);
     WEBCORE_EXPORT static std::optional<Ref<Image>> create(RefPtr<ShareableBitmap>&&);

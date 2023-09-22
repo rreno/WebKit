@@ -188,6 +188,7 @@
 		44D5008E26FE9ED6000EB12F /* RetainPtrARC.mm in Sources */ = {isa = PBXBuildFile; fileRef = 44D5008D26FE9ED6000EB12F /* RetainPtrARC.mm */; settings = {COMPILER_FLAGS = "-fobjc-arc"; }; };
 		44FBAEFF2C7A7FDB00AF51BC /* RetainPtrHashingCocoa.mm in Sources */ = {isa = PBXBuildFile; fileRef = 44FBAEFD2C7A7FDB00AF51BC /* RetainPtrHashingCocoa.mm */; };
 		44FBAF002C7A7FDB00AF51BC /* RetainPtrHashingCocoaARC.mm in Sources */ = {isa = PBXBuildFile; fileRef = 44FBAEFE2C7A7FDB00AF51BC /* RetainPtrHashingCocoaARC.mm */; settings = {COMPILER_FLAGS = "-fobjc-arc"; }; };
+		4582CDBD2ABD0C2000D3FBB1 /* RefTrackedRefPtr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4582CDBC2ABD0C2000D3FBB1 /* RefTrackedRefPtr.cpp */; };
 		4628C8E92367ABD100B073F0 /* WKSecurityOrigin.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4628C8E82367ABBC00B073F0 /* WKSecurityOrigin.cpp */; };
 		46397B951DC2C850009A78AE /* DOMNode.mm in Sources */ = {isa = PBXBuildFile; fileRef = 46397B941DC2C850009A78AE /* DOMNode.mm */; };
 		4647B1261EBA3B850041D7EF /* ProcessDidTerminate.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4647B1251EBA3B730041D7EF /* ProcessDidTerminate.cpp */; };
@@ -2546,6 +2547,7 @@
 		44DBE9512BD2272900307F65 /* TextPlaceholderTests.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = TextPlaceholderTests.mm; sourceTree = "<group>"; };
 		44FBAEFD2C7A7FDB00AF51BC /* RetainPtrHashingCocoa.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = RetainPtrHashingCocoa.mm; sourceTree = "<group>"; };
 		44FBAEFE2C7A7FDB00AF51BC /* RetainPtrHashingCocoaARC.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = RetainPtrHashingCocoaARC.mm; sourceTree = "<group>"; };
+		4582CDBC2ABD0C2000D3FBB1 /* RefTrackedRefPtr.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RefTrackedRefPtr.cpp; sourceTree = "<group>"; };
 		46061545275824B400AB613D /* WebLocks.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = WebLocks.mm; sourceTree = "<group>"; };
 		460C2FC827039D7D0047EF11 /* ServiceWorkerPageProtocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ServiceWorkerPageProtocol.h; sourceTree = "<group>"; };
 		4612C2B8210A6ABF00B788A6 /* LoadFileThenReload.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = LoadFileThenReload.mm; sourceTree = "<group>"; };
@@ -5712,6 +5714,7 @@
 				442BBF681C91CAD90017087F /* RefLogger.cpp */,
 				93A427AD180DA60F00CD24D7 /* RefLogger.h */,
 				93A427A8180D9B0700CD24D7 /* RefPtr.cpp */,
+				4582CDBC2ABD0C2000D3FBB1 /* RefTrackedRefPtr.cpp */,
 				E355A6312615718F001C1129 /* RobinHoodHashMap.cpp */,
 				E355A62F26157174001C1129 /* RobinHoodHashSet.cpp */,
 				E4C9ABC71B3DB1710040A987 /* RunLoop.cpp */,
@@ -6804,6 +6807,7 @@
 				7C83DF151D0A590C00FEBCF3 /* RefCounter.cpp in Sources */,
 				7C83DED71D0A590C00FEBCF3 /* RefLogger.cpp in Sources */,
 				7C83DF161D0A590C00FEBCF3 /* RefPtr.cpp in Sources */,
+				4582CDBD2ABD0C2000D3FBB1 /* RefTrackedRefPtr.cpp in Sources */,
 				44AC8BC621D0245A00CAFB34 /* RetainPtr.cpp in Sources */,
 				7C83DF241D0A590C00FEBCF3 /* RetainPtr.mm in Sources */,
 				44D5008E26FE9ED6000EB12F /* RetainPtrARC.mm in Sources */,

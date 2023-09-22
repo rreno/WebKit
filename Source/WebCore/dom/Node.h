@@ -40,6 +40,7 @@
 #include <wtf/MainThread.h>
 #include <wtf/OptionSet.h>
 #include <wtf/RefCounted.h>
+#include <wtf/RefTracker.h>
 #include <wtf/RobinHoodHashSet.h>
 #include <wtf/TZoneMalloc.h>
 #include <wtf/URLHash.h>
@@ -547,6 +548,11 @@ public:
     unsigned refCount() const;
     void applyRefDuringDestructionCheck() const;
 
+#if ENABLE(REF_TRACKING)
+    WEBCORE_EXPORT RefTrackingToken trackRef() const;
+    WEBCORE_EXPORT void trackDeref(RefTrackingToken token) const;
+#endif
+
 #if ASSERT_ENABLED
     mutable bool m_inRemovedLastRefFunction { false };
     bool m_adoptionIsRequired { true };
@@ -971,6 +977,28 @@ inline NodeClass& Node::traverseToRootNodeInternal(const NodeClass& node)
         current = current->parentNode();
     return *current;
 }
+
+#if ENABLE(REF_TRACKING)
+inline RefTrackingToken EventTarget::trackRef()
+{
+    if (LIKELY(isNode()))
+        return downcast<Node>(*this).trackRef();
+    return UntrackedRefToken();
+}
+
+inline void EventTarget::trackDeref(RefTrackingToken token)
+{
+    if (LIKELY(isNode()))
+        return downcast<Node>(*this).trackDeref(token);
+}
+
+inline const RefTracker& EventTarget::refTracker() const
+{
+    if (LIKELY(isNode()))
+        return downcast<Node>(*this).refTracker();
+    return RefTracker::sharedTracker();
+}
+#endif // ENABLE(REF_TRACKING)
 
 WEBCORE_EXPORT WTF::TextStream& operator<<(WTF::TextStream&, const Node&);
 

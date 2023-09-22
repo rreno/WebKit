@@ -68,6 +68,11 @@ public:
     void ref() const final { HTMLElement::ref(); }
     void deref() const final { HTMLElement::deref(); }
 
+#if ENABLE(REF_TRACKING)
+    using HTMLElement::trackRef;
+    using HTMLElement::trackDeref;
+#endif
+
     void formOwnerRemovedFromTree(const Node& formRoot);
 
     WEBCORE_EXPORT unsigned width();
@@ -237,6 +242,8 @@ private:
 #if ENABLE(ATTACHMENT_ELEMENT)
     void refAttachmentAssociatedElement() const final { HTMLElement::ref(); }
     void derefAttachmentAssociatedElement() const final { HTMLElement::deref(); }
+    RefTrackingToken trackRefAttachmentAssociatedElement() const final { return HTMLElement::trackRef(); }
+    void trackDerefAttachmentAssociatedElement(RefTrackingToken token) const final { HTMLElement::trackDeref(token); }
 
     AttachmentAssociatedElement* asAttachmentAssociatedElement() final { return this; }
 

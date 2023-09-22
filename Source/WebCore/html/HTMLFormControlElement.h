@@ -38,6 +38,10 @@ class HTMLFormControlElement : public HTMLElement, public ValidatedFormListedEle
     WTF_OVERRIDE_DELETE_FOR_CHECKED_PTR(HTMLFormControlElement);
 public:
     virtual ~HTMLFormControlElement();
+#if ENABLE(REF_TRACKING)
+    using HTMLElement::trackRef;
+    using HTMLElement::trackDeref;
+#endif
 
     bool isValidatedFormListedElement() const final { return true; }
     bool isFormListedElement() const final { return true; }

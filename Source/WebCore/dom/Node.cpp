@@ -135,6 +135,22 @@ WTF_MAKE_TZONE_ALLOCATED_IMPL(SameSizeAsNode);
 
 static_assert(sizeof(Node) == sizeof(SameSizeAsNode), "Node should stay small");
 
+#if ENABLE(REF_TRACKING)
+RefTrackingToken Node::trackRef() const
+{
+    if (isDocumentNode())
+        return RefTracker::documentTracker().trackRef(downcast<Document>(*this).url().string());
+    return RefTracker::sharedTracker().trackRef();
+}
+
+void Node::trackDeref(RefTrackingToken token) const
+{
+    if (isDocumentNode())
+        return RefTracker::documentTracker().trackDeref(token);
+    return RefTracker::sharedTracker().trackDeref(token);
+}
+#endif
+
 #if DUMP_NODE_STATISTICS
 static WeakHashSet<Node>& liveNodeSet()
 {

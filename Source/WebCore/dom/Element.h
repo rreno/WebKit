@@ -37,6 +37,7 @@
 #include "SimulatedClickOptions.h"
 #include "WebAnimationTypes.h"
 #include <JavaScriptCore/Forward.h>
+#include <wtf/RefTracker.h>
 
 #define DUMP_NODE_STATISTICS 0
 

@@ -215,7 +215,7 @@ template<typename T> void add(Hasher& hasher, std::initializer_list<T> values)
         add(hasher, value);
 }
 
-template<typename T, typename U, typename V> void add(Hasher& hasher, const RefPtr<T, U, V>& refPtr)
+template<typename T, typename U, template <typename> typename V> void add(Hasher& hasher, const RefPtr<T, U, V>& refPtr)
 {
     add(hasher, refPtr.get());
 }

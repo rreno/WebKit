@@ -76,8 +76,6 @@ struct VectorBufferMalloc;
 using VectorBufferMalloc = FastMalloc;
 #endif
 
-template<typename> struct DefaultRefDerefTraits;
-
 template<typename> class CompactPtr;
 template<typename> class CompletionHandler;
 template<typename, size_t = 0> class Deque;
@@ -96,10 +94,11 @@ template<typename> class OptionSet;
 template<typename> class Packed;
 template<typename T, size_t = alignof(T)> class PackedAlignedPtr;
 template<typename> struct RawPtrTraits;
+template<typename> struct RefDerefTraits;
 template<typename T, typename = RawPtrTraits<T>> class CheckedRef;
 template<typename T, typename = RawPtrTraits<T>> class CheckedPtr;
-template<typename T, typename = RawPtrTraits<T>, typename = DefaultRefDerefTraits<T>> class Ref;
-template<typename T, typename = RawPtrTraits<T>, typename = DefaultRefDerefTraits<T>> class RefPtr;
+template<typename T, typename = RawPtrTraits<T>, template <typename> typename = RefDerefTraits> class Ref;
+template<typename T, typename = RawPtrTraits<T>, template <typename> typename = RefDerefTraits> class RefPtr;
 template<typename> class RetainPtr;
 template<typename> class ScopedLambda;
 template<typename> class StringBuffer;
@@ -196,7 +195,9 @@ using WTF::PrintStream;
 using WTF::RawPtrTraits;
 using WTF::RawValueTraits;
 using WTF::Ref;
+using WTF::SerialFunctionDispatcher;
 using WTF::GuaranteedSerialFunctionDispatcher;
+using WTF::RefDerefTraits;
 using WTF::RefPtr;
 using WTF::RetainPtr;
 using WTF::SHA1;
