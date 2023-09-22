@@ -31,6 +31,7 @@
 #include <WebGPU/WebGPUExt.h>
 #include <type_traits>
 #include <wtf/RefPtr.h>
+#include <wtf/RefTracker.h>
 
 namespace WebCore::WebGPU {
 
@@ -61,44 +62,48 @@ template <typename T, void (*reference)(T), void(*release)(T)> struct BaseWebGPU
         if (LIKELY(t))
             release(t);
     }
+
+    static void adoptRef(auto*) { }
+    static void swapRef(auto&) { }
+    static void moveRef(auto&) { }
 };
 
 template <typename> struct WebGPURefDerefTraits;
 
-template <> struct WebGPURefDerefTraits<WGPUAdapter> : public BaseWebGPURefDerefTraits<WGPUAdapter, wgpuAdapterReference, wgpuAdapterRelease> { };
-template <> struct WebGPURefDerefTraits<WGPUBindGroup> : public BaseWebGPURefDerefTraits<WGPUBindGroup, wgpuBindGroupReference, wgpuBindGroupRelease> { };
-template <> struct WebGPURefDerefTraits<WGPUBindGroupLayout> : public BaseWebGPURefDerefTraits<WGPUBindGroupLayout, wgpuBindGroupLayoutReference, wgpuBindGroupLayoutRelease> { };
-template <> struct WebGPURefDerefTraits<WGPUBuffer> : public BaseWebGPURefDerefTraits<WGPUBuffer, wgpuBufferReference, wgpuBufferRelease> { };
-template <> struct WebGPURefDerefTraits<WGPUCommandBuffer> : public BaseWebGPURefDerefTraits<WGPUCommandBuffer, wgpuCommandBufferReference, wgpuCommandBufferRelease> { };
-template <> struct WebGPURefDerefTraits<WGPUCommandEncoder> : public BaseWebGPURefDerefTraits<WGPUCommandEncoder, wgpuCommandEncoderReference, wgpuCommandEncoderRelease> { };
-template <> struct WebGPURefDerefTraits<WGPUComputePassEncoder> : public BaseWebGPURefDerefTraits<WGPUComputePassEncoder, wgpuComputePassEncoderReference, wgpuComputePassEncoderRelease> { };
-template <> struct WebGPURefDerefTraits<WGPUComputePipeline> : public BaseWebGPURefDerefTraits<WGPUComputePipeline, wgpuComputePipelineReference, wgpuComputePipelineRelease> { };
-template <> struct WebGPURefDerefTraits<WGPUDevice> : public BaseWebGPURefDerefTraits<WGPUDevice, wgpuDeviceReference, wgpuDeviceRelease> { };
-template <> struct WebGPURefDerefTraits<WGPUInstance> : public BaseWebGPURefDerefTraits<WGPUInstance, wgpuInstanceReference, wgpuInstanceRelease> { };
-template <> struct WebGPURefDerefTraits<WGPUPipelineLayout> : public BaseWebGPURefDerefTraits<WGPUPipelineLayout, wgpuPipelineLayoutReference, wgpuPipelineLayoutRelease> { };
-template <> struct WebGPURefDerefTraits<WGPUQuerySet> : public BaseWebGPURefDerefTraits<WGPUQuerySet, wgpuQuerySetReference, wgpuQuerySetRelease> { };
-template <> struct WebGPURefDerefTraits<WGPUQueue> : public BaseWebGPURefDerefTraits<WGPUQueue, wgpuQueueReference, wgpuQueueRelease> { };
-template <> struct WebGPURefDerefTraits<WGPURenderBundle> : public BaseWebGPURefDerefTraits<WGPURenderBundle, wgpuRenderBundleReference, wgpuRenderBundleRelease> { };
-template <> struct WebGPURefDerefTraits<WGPURenderBundleEncoder> : public BaseWebGPURefDerefTraits<WGPURenderBundleEncoder, wgpuRenderBundleEncoderReference, wgpuRenderBundleEncoderRelease> { };
-template <> struct WebGPURefDerefTraits<WGPURenderPassEncoder> : public BaseWebGPURefDerefTraits<WGPURenderPassEncoder, wgpuRenderPassEncoderReference, wgpuRenderPassEncoderRelease> { };
-template <> struct WebGPURefDerefTraits<WGPURenderPipeline> : public BaseWebGPURefDerefTraits<WGPURenderPipeline, wgpuRenderPipelineReference, wgpuRenderPipelineRelease> { };
-template <> struct WebGPURefDerefTraits<WGPUSampler> : public BaseWebGPURefDerefTraits<WGPUSampler, wgpuSamplerReference, wgpuSamplerRelease> { };
-template <> struct WebGPURefDerefTraits<WGPUShaderModule> : public BaseWebGPURefDerefTraits<WGPUShaderModule, wgpuShaderModuleReference, wgpuShaderModuleRelease> { };
-template <> struct WebGPURefDerefTraits<WGPUSurface> : public BaseWebGPURefDerefTraits<WGPUSurface, wgpuSurfaceReference, wgpuSurfaceRelease> { };
-template <> struct WebGPURefDerefTraits<WGPUSwapChain> : public BaseWebGPURefDerefTraits<WGPUSwapChain, wgpuSwapChainReference, wgpuSwapChainRelease> { };
-template <> struct WebGPURefDerefTraits<WGPUTexture> : public BaseWebGPURefDerefTraits<WGPUTexture, wgpuTextureReference, wgpuTextureRelease> { };
-template <> struct WebGPURefDerefTraits<WGPUTextureView> : public BaseWebGPURefDerefTraits<WGPUTextureView, wgpuTextureViewReference, wgpuTextureViewRelease> { };
-template <> struct WebGPURefDerefTraits<WGPUExternalTexture> : public BaseWebGPURefDerefTraits<WGPUExternalTexture, wgpuExternalTextureReference, wgpuExternalTextureRelease> { };
-template <> struct WebGPURefDerefTraits<WGPUXRBinding> : public BaseWebGPURefDerefTraits<WGPUXRBinding, wgpuXRBindingReference, wgpuXRBindingRelease> { };
-template <> struct WebGPURefDerefTraits<WGPUXRProjectionLayer> : public BaseWebGPURefDerefTraits<WGPUXRProjectionLayer, wgpuXRProjectionLayerReference, wgpuXRProjectionLayerRelease> { };
-template <> struct WebGPURefDerefTraits<WGPUXRSubImage> : public BaseWebGPURefDerefTraits<WGPUXRSubImage, wgpuXRSubImageReference, wgpuXRSubImageRelease> { };
-template <> struct WebGPURefDerefTraits<WGPUXRView> : public BaseWebGPURefDerefTraits<WGPUXRView, wgpuXRViewReference, wgpuXRViewRelease> { };
+template <> struct WebGPURefDerefTraits<WGPUAdapterImpl> : public BaseWebGPURefDerefTraits<WGPUAdapter, wgpuAdapterReference, wgpuAdapterRelease> { };
+template <> struct WebGPURefDerefTraits<WGPUBindGroupImpl> : public BaseWebGPURefDerefTraits<WGPUBindGroup, wgpuBindGroupReference, wgpuBindGroupRelease> { };
+template <> struct WebGPURefDerefTraits<WGPUBindGroupLayoutImpl> : public BaseWebGPURefDerefTraits<WGPUBindGroupLayout, wgpuBindGroupLayoutReference, wgpuBindGroupLayoutRelease> { };
+template <> struct WebGPURefDerefTraits<WGPUBufferImpl> : public BaseWebGPURefDerefTraits<WGPUBuffer, wgpuBufferReference, wgpuBufferRelease> { };
+template <> struct WebGPURefDerefTraits<WGPUCommandBufferImpl> : public BaseWebGPURefDerefTraits<WGPUCommandBuffer, wgpuCommandBufferReference, wgpuCommandBufferRelease> { };
+template <> struct WebGPURefDerefTraits<WGPUCommandEncoderImpl> : public BaseWebGPURefDerefTraits<WGPUCommandEncoder, wgpuCommandEncoderReference, wgpuCommandEncoderRelease> { };
+template <> struct WebGPURefDerefTraits<WGPUComputePassEncoderImpl> : public BaseWebGPURefDerefTraits<WGPUComputePassEncoder, wgpuComputePassEncoderReference, wgpuComputePassEncoderRelease> { };
+template <> struct WebGPURefDerefTraits<WGPUComputePipelineImpl> : public BaseWebGPURefDerefTraits<WGPUComputePipeline, wgpuComputePipelineReference, wgpuComputePipelineRelease> { };
+template <> struct WebGPURefDerefTraits<WGPUDeviceImpl> : public BaseWebGPURefDerefTraits<WGPUDevice, wgpuDeviceReference, wgpuDeviceRelease> { };
+template <> struct WebGPURefDerefTraits<WGPUInstanceImpl> : public BaseWebGPURefDerefTraits<WGPUInstance, wgpuInstanceReference, wgpuInstanceRelease> { };
+template <> struct WebGPURefDerefTraits<WGPUPipelineLayoutImpl> : public BaseWebGPURefDerefTraits<WGPUPipelineLayout, wgpuPipelineLayoutReference, wgpuPipelineLayoutRelease> { };
+template <> struct WebGPURefDerefTraits<WGPUQuerySetImpl> : public BaseWebGPURefDerefTraits<WGPUQuerySet, wgpuQuerySetReference, wgpuQuerySetRelease> { };
+template <> struct WebGPURefDerefTraits<WGPUQueueImpl> : public BaseWebGPURefDerefTraits<WGPUQueue, wgpuQueueReference, wgpuQueueRelease> { };
+template <> struct WebGPURefDerefTraits<WGPURenderBundleImpl> : public BaseWebGPURefDerefTraits<WGPURenderBundle, wgpuRenderBundleReference, wgpuRenderBundleRelease> { };
+template <> struct WebGPURefDerefTraits<WGPURenderBundleEncoderImpl> : public BaseWebGPURefDerefTraits<WGPURenderBundleEncoder, wgpuRenderBundleEncoderReference, wgpuRenderBundleEncoderRelease> { };
+template <> struct WebGPURefDerefTraits<WGPURenderPassEncoderImpl> : public BaseWebGPURefDerefTraits<WGPURenderPassEncoder, wgpuRenderPassEncoderReference, wgpuRenderPassEncoderRelease> { };
+template <> struct WebGPURefDerefTraits<WGPURenderPipelineImpl> : public BaseWebGPURefDerefTraits<WGPURenderPipeline, wgpuRenderPipelineReference, wgpuRenderPipelineRelease> { };
+template <> struct WebGPURefDerefTraits<WGPUSamplerImpl> : public BaseWebGPURefDerefTraits<WGPUSampler, wgpuSamplerReference, wgpuSamplerRelease> { };
+template <> struct WebGPURefDerefTraits<WGPUShaderModuleImpl> : public BaseWebGPURefDerefTraits<WGPUShaderModule, wgpuShaderModuleReference, wgpuShaderModuleRelease> { };
+template <> struct WebGPURefDerefTraits<WGPUSurfaceImpl> : public BaseWebGPURefDerefTraits<WGPUSurface, wgpuSurfaceReference, wgpuSurfaceRelease> { };
+template <> struct WebGPURefDerefTraits<WGPUSwapChainImpl> : public BaseWebGPURefDerefTraits<WGPUSwapChain, wgpuSwapChainReference, wgpuSwapChainRelease> { };
+template <> struct WebGPURefDerefTraits<WGPUTextureImpl> : public BaseWebGPURefDerefTraits<WGPUTexture, wgpuTextureReference, wgpuTextureRelease> { };
+template <> struct WebGPURefDerefTraits<WGPUTextureViewImpl> : public BaseWebGPURefDerefTraits<WGPUTextureView, wgpuTextureViewReference, wgpuTextureViewRelease> { };
+template <> struct WebGPURefDerefTraits<WGPUExternalTextureImpl> : public BaseWebGPURefDerefTraits<WGPUExternalTexture, wgpuExternalTextureReference, wgpuExternalTextureRelease> { };
+template <> struct WebGPURefDerefTraits<WGPUXRBindingImpl> : public BaseWebGPURefDerefTraits<WGPUXRBinding, wgpuXRBindingReference, wgpuXRBindingRelease> { };
+template <> struct WebGPURefDerefTraits<WGPUXRProjectionLayerImpl> : public BaseWebGPURefDerefTraits<WGPUXRProjectionLayer, wgpuXRProjectionLayerReference, wgpuXRProjectionLayerRelease> { };
+template <> struct WebGPURefDerefTraits<WGPUXRSubImageImpl> : public BaseWebGPURefDerefTraits<WGPUXRSubImage, wgpuXRSubImageReference, wgpuXRSubImageRelease> { };
+template <> struct WebGPURefDerefTraits<WGPUXRViewImpl> : public BaseWebGPURefDerefTraits<WGPUXRView, wgpuXRViewReference, wgpuXRViewRelease> { };
 
-template <typename T> using WebGPUPtr = RefPtr<std::remove_pointer_t<T>, WebGPUPtrTraits<T>, WebGPURefDerefTraits<T>>;
+template <typename T> using WebGPUPtr = RefPtr<std::remove_pointer_t<T>, WebGPUPtrTraits<T>, WebGPURefDerefTraits>;
 
 template <typename T> inline WebGPUPtr<T> adoptWebGPU(T t)
 {
-    return adoptRef<std::remove_pointer_t<T>, WebGPUPtrTraits<T>, WebGPURefDerefTraits<T>>(t);
+    return adoptRef<std::remove_pointer_t<T>, WebGPUPtrTraits<T>, WebGPURefDerefTraits>(t);
 }
 
 } // namespace WebCore::WebGPU
