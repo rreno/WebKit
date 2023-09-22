@@ -54,6 +54,28 @@ inline void EventTarget::deref()
         derefEventTarget();
 }
 
+#if ENABLE(REF_TRACKING)
+inline RefTrackingToken EventTarget::trackRef()
+{
+    if (isNode()) [[likely]]
+        return downcast<Node>(*this).trackRef();
+    return UntrackedRefToken();
+}
+
+inline void EventTarget::trackDeref(RefTrackingToken token)
+{
+    if (isNode()) [[likely]]
+        return downcast<Node>(*this).trackDeref(token);
+}
+
+inline const RefTracker& EventTarget::refTracker() const
+{
+    if (isNode()) [[likely]]
+        return downcast<Node>(*this).refTracker();
+    return RefTracker::sharedTracker();
+}
+#endif // ENABLE(REF_TRACKING)
+
 inline bool EventTarget::hasEventListeners() const
 {
     auto* data = eventTargetData();

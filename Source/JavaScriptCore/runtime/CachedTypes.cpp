@@ -575,7 +575,7 @@ public:
             return nullptr;
         if (isNewAllocation) {
             decoder.addFinalizer([=] {
-                WTF::DefaultRefDerefTraits<Source>::derefIfNotNull(decodedPtr);
+                WTF::RefDerefTraits<Source>::derefIfNotNull(decodedPtr);
             });
         }
         auto result = adoptRef<Source, PtrTraits>(decodedPtr);

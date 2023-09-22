@@ -227,6 +227,16 @@ using VMIdentifier = AtomicObjectIdentifier<VMIdentifierType>;
 class VM : public ThreadSafeRefCountedWithSuppressingSaferCPPChecking<VM>, public DoublyLinkedListNode<VM> {
     WTF_DEPRECATED_MAKE_FAST_ALLOCATED_WITH_HEAP_IDENTIFIER(VM, VM);
 public:
+    void ref()
+    {
+        refSuppressingSaferCPPChecking();
+    }
+
+    void deref()
+    {
+        derefSuppressingSaferCPPChecking();
+    }
+
     // WebCore has a one-to-one mapping of threads to VMs;
     // create() should only be called once
     // on a thread, this is the 'default' VM (it uses the
@@ -1159,36 +1169,6 @@ extern "C" void SYSV_ABI sanitizeStackForVMImpl(VM*);
 JS_EXPORT_PRIVATE void sanitizeStackForVM(VM&);
 
 } // namespace JSC
-
-
-namespace WTF {
-
-// Unfortunately we have a lot of code that uses JSC::VM without locally
-// verifying its lifetime. Safer CPP checker needs to understand JSC::VM's
-// lifetime threaded from JSC entrance. Until that, we explicitly suppress
-// Ref<VM> lifetime checking by using ThreadSafeRefCountedWithSuppressingSaferCPPChecking.
-template<> struct DefaultRefDerefTraits<JSC::VM> {
-    static ALWAYS_INLINE JSC::VM* refIfNotNull(JSC::VM* ptr)
-    {
-        if (ptr) [[likely]]
-            ptr->refSuppressingSaferCPPChecking();
-        return ptr;
-    }
-
-    static ALWAYS_INLINE JSC::VM& ref(JSC::VM& ref)
-    {
-        ref.refSuppressingSaferCPPChecking();
-        return ref;
-    }
-
-    static ALWAYS_INLINE void derefIfNotNull(JSC::VM* ptr)
-    {
-        if (ptr) [[likely]]
-            ptr->derefSuppressingSaferCPPChecking();
-    }
-};
-
-} // namespace WTF
 
 
 WTF_ALLOW_UNSAFE_BUFFER_USAGE_END

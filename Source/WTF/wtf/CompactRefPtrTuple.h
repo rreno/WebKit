@@ -75,7 +75,7 @@ public:
 
     ~CompactRefPtrTuple()
     {
-        WTF::DefaultRefDerefTraits<T>::derefIfNotNull(m_data.pointer());
+        WTF::RefDerefTraits<T>::derefIfNotNull(m_data.pointer());
     }
 
     T* pointer() const
@@ -85,9 +85,10 @@ public:
 
     void setPointer(T* pointer)
     {
+        WTF::RefDerefTraits<T>::refIfNotNull(pointer);
         auto* old = m_data.pointer();
-        m_data.setPointer(WTF::DefaultRefDerefTraits<T>::refIfNotNull(pointer));
-        WTF::DefaultRefDerefTraits<T>::derefIfNotNull(old);
+        m_data.setPointer(pointer);
+        WTF::RefDerefTraits<T>::derefIfNotNull(old);
     }
 
     void setPointer(RefPtr<T>&& pointer)
@@ -95,7 +96,7 @@ public:
         auto willRelease = WTFMove(pointer);
         auto* old = m_data.pointer();
         m_data.setPointer(willRelease.leakRef());
-        WTF::DefaultRefDerefTraits<T>::derefIfNotNull(old);
+        WTF::RefDerefTraits<T>::derefIfNotNull(old);
     }
 
     void setPointer(Ref<T>&& pointer)
@@ -103,7 +104,7 @@ public:
         auto willRelease = WTFMove(pointer);
         auto* old = m_data.pointer();
         m_data.setPointer(&willRelease.leakRef());
-        WTF::DefaultRefDerefTraits<T>::derefIfNotNull(old);
+        WTF::RefDerefTraits<T>::derefIfNotNull(old);
     }
 
     Type type() const { return m_data.type(); }

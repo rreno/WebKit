@@ -34,6 +34,7 @@
 #include <WebCore/RenderPtr.h>
 #include <WebCore/ScrollTypes.h>
 #include <WebCore/SimulatedClickOptions.h>
+#include <wtf/RefTracker.h>
 
 #define DUMP_NODE_STATISTICS 0
 

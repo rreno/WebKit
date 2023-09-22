@@ -39,9 +39,17 @@ void registerNotifyCallback(ASCIILiteral notifyID, Function<void()>&& callback)
 {
 #if PLATFORM(COCOA)
     int token;
-    notify_register_dispatch(notifyID.characters(), &token, dispatch_get_main_queue(), makeBlockPtr([callback = WTFMove(callback)](int) {
+    auto status = notify_register_dispatch(notifyID.characters(), &token, dispatch_get_main_queue(), makeBlockPtr([callback = WTFMove(callback)](int) {
         callback();
     }).get());
+    if (status == NOTIFY_STATUS_OK)
+        WTFLogAlways("RYAN: %s OK", notifyID.characters());
+    else if (status == NOTIFY_STATUS_INVALID_NAME)
+        WTFLogAlways("RYAN: %s Invalid Name", notifyID.characters());
+    else if (status == NOTIFY_STATUS_INVALID_TOKEN)
+        WTFLogAlways("RYAN: %s Invalid Token", notifyID.characters());
+    else
+        WTFLogAlways("RYAN: %s (something else)", notifyID.characters());
 #else
     UNUSED_PARAM(notifyID);
     UNUSED_PARAM(callback);

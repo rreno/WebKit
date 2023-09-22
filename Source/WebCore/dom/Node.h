@@ -43,6 +43,7 @@
 #include <wtf/MainThread.h>
 #include <wtf/OptionSet.h>
 #include <wtf/RefCounted.h>
+#include <wtf/RefTracker.h>
 #include <wtf/RobinHoodHashSet.h>
 #include <wtf/StdLibExtras.h>
 #include <wtf/TZoneMalloc.h>
@@ -590,6 +591,12 @@ public:
     inline void relaxAdoptionRequirement();
 
     HashMap<Ref<MutationObserver>, MutationRecordDeliveryOptions> registeredMutationObservers(MutationObserverOptionType, const QualifiedName* attributeName);
+
+#if ENABLE(REF_TRACKING)
+    WEBCORE_EXPORT RefTrackingToken trackRef() const;
+    WEBCORE_EXPORT void trackDeref(RefTrackingToken token) const;
+#endif
+
     void registerMutationObserver(MutationObserver&, MutationObserverOptions, const MemoryCompactLookupOnlyRobinHoodHashSet<AtomString>& attributeFilter);
     void unregisterMutationObserver(MutationObserverRegistration&);
     void registerTransientMutationObserver(MutationObserverRegistration&);

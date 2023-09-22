@@ -51,9 +51,12 @@ struct wpe_playstation_display;
 namespace WTF {
 #if PLATFORM(MAC)
 ALLOW_DEPRECATED_DECLARATIONS_BEGIN
-template<> struct DefaultRefDerefTraits<__CVDisplayLink> {
+template<> struct RefDerefTraits<__CVDisplayLink> {
     static CVDisplayLinkRef refIfNotNull(CVDisplayLinkRef displayLink) { return CVDisplayLinkRetain(displayLink); }
     static void derefIfNotNull(CVDisplayLinkRef displayLink) { CVDisplayLinkRelease(displayLink); }
+    static void adoptRef(auto*) { }
+    static void swapRef(auto&) { }
+    static void moveRef(auto&) { }
 };
 ALLOW_DEPRECATED_DECLARATIONS_END
 #endif // PLATFORM(MAC)

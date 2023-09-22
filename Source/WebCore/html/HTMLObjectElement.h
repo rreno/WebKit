@@ -35,6 +35,9 @@ class HTMLObjectElement final : public HTMLPlugInImageElement, public FormListed
 public:
     static Ref<HTMLObjectElement> create(const QualifiedName&, Document&, HTMLFormElement*);
 
+    using HTMLElement::trackRef;
+    using HTMLElement::trackDeref;
+
     bool isExposed() const { return m_isExposed; }
 
     bool hasFallbackContent() const;

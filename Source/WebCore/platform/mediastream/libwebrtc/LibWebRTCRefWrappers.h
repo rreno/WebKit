@@ -49,6 +49,7 @@ WTF_IGNORE_WARNINGS_IN_THIRD_PARTY_CODE_END
 
 namespace WTF {
 
+#if !ENABLE(REF_TRACKING)
 template<typename T> struct RTCDefaultRefDerefTraits {
     static ALWAYS_INLINE T* refIfNotNull(T* buffer)
     {
@@ -68,7 +69,7 @@ template<typename T> struct RTCDefaultRefDerefTraits {
     }
 };
 
-#define WEBRTC_REFTRAITS(T) template<> struct DefaultRefDerefTraits<T> : RTCDefaultRefDerefTraits<T> { };
+#define WEBRTC_REFTRAITS(T) template<> struct DefaultRefDerefTraits<T> : RTCDefaultRefDerefTraits<T> { }
 
 WEBRTC_REFTRAITS(webrtc::AudioTrackInterface);
 WEBRTC_REFTRAITS(webrtc::DataChannelInterface);
@@ -86,6 +87,8 @@ WEBRTC_REFTRAITS(webrtc::TransformedFrameCallback);
 WEBRTC_REFTRAITS(webrtc::SctpTransportInterface);
 WEBRTC_REFTRAITS(webrtc::VideoFrameBuffer);
 WEBRTC_REFTRAITS(webrtc::VideoTrackInterface);
+
+#endif // !ENABLE(REF_TRACKING)
 
 template<typename T>
 Ref<T> toRef(webrtc::scoped_refptr<T>&& buffer)

@@ -48,6 +48,8 @@ class AttachmentAssociatedElement {
 public:
     void ref() const { refAttachmentAssociatedElement(); }
     void deref() const { derefAttachmentAssociatedElement(); }
+    RefTrackingToken trackRef() const { return trackRefAttachmentAssociatedElement(); }
+    void trackDeref(RefTrackingToken token) const { trackDerefAttachmentAssociatedElement(token); }
 
     virtual ~AttachmentAssociatedElement() = default;
 
@@ -71,6 +73,10 @@ private:
     virtual void derefAttachmentAssociatedElement() const = 0;
 
     virtual Ref<Element> cloneElementWithoutAttributesAndChildren(Document&, CustomElementRegistry*) const = 0;
+
+    virtual RefTrackingToken trackRefAttachmentAssociatedElement() const = 0;
+    virtual void trackDerefAttachmentAssociatedElement(RefTrackingToken) const = 0;
+
     virtual void copyNonAttributePropertiesFromElement(const Element&) = 0;
 
     virtual AttachmentAssociatedElement* asAttachmentAssociatedElement() = 0;

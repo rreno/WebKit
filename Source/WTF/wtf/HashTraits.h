@@ -220,7 +220,7 @@ template<> struct HashTraits<ASCIILiteral> : SimpleClassHashTraits<ASCIILiteral>
     static bool isDeletedValue(const ASCIILiteral& value) { return value.isDeletedValue(); }
 };
 
-template<typename P, typename Q, typename R> struct HashTraits<RefPtr<P, Q, R>> : SimpleClassHashTraits<RefPtr<P, Q, R>> {
+template<typename P, typename Q, template <typename> typename R> struct HashTraits<RefPtr<P, Q, R>> : SimpleClassHashTraits<RefPtr<P, Q, R>> {
     static P* emptyValue() { return nullptr; }
     static bool isEmptyValue(const RefPtr<P, Q, R>& value) { return !value; }
 

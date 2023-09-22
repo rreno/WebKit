@@ -43,6 +43,7 @@
 #include <wtf/Forward.h>
 #include <wtf/TZoneMalloc.h>
 #include <wtf/Variant.h>
+#include <wtf/RefTracker.h>
 #include <wtf/WeakPtr.h>
 #include <wtf/WeakPtrFactory.h>
 #include <wtf/WeakPtrImpl.h>
@@ -95,6 +96,12 @@ public:
     inline void deref(); // Defined in EventTargetInlines.h.
 
     virtual enum EventTargetInterfaceType eventTargetInterface() const = 0;
+#if ENABLE(REF_TRACKING)
+    inline RefTrackingToken trackRef(); // Defined in Node.h
+    inline void trackDeref(RefTrackingToken); // Defined in Node.h
+    inline const RefTracker& refTracker() const; // Defined in Node.h
+#endif
+
     virtual ScriptExecutionContext* scriptExecutionContext() const = 0;
 
     virtual bool isPaymentRequest() const;
