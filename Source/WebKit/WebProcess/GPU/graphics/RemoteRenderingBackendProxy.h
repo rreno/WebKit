@@ -146,6 +146,7 @@ public:
         bool supportsPartialRepaint { true };
         bool hasEmptyDirtyRegion { false };
         bool requiresClearedPixels { true };
+        String name;
     };
 
 #if PLATFORM(COCOA)

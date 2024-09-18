@@ -193,9 +193,9 @@ static RefPtr<ImageBuffer> allocateBufferInternal(RemoteLayerBackingStore::Type 
 {
     switch (type) {
     case RemoteLayerBackingStore::Type::IOSurface:
-        return WebCore::ImageBuffer::create<ImageBufferShareableMappedIOSurfaceBackend, ImageBufferType>(logicalSize, resolutionScale, colorSpace, pixelFormat, purpose, creationContext);
+        return WebCore::ImageBuffer::create<ImageBufferShareableMappedIOSurfaceBackend, ImageBufferType>(logicalSize, resolutionScale, colorSpace, pixelFormat, purpose, emptyString(), creationContext);
     case RemoteLayerBackingStore::Type::Bitmap:
-        return WebCore::ImageBuffer::create<ImageBufferShareableBitmapBackend, ImageBufferType>(logicalSize, resolutionScale, colorSpace, pixelFormat, purpose, creationContext);
+        return WebCore::ImageBuffer::create<ImageBufferShareableBitmapBackend, ImageBufferType>(logicalSize, resolutionScale, colorSpace, pixelFormat, purpose, emptyString(), creationContext);
     }
 }
 

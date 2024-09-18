@@ -86,6 +86,7 @@ struct ImageBufferParameters {
     DestinationColorSpace colorSpace;
     ImageBufferPixelFormat pixelFormat;
     RenderingPurpose purpose;
+    String name;
 };
 
 class ImageBuffer : public ThreadSafeRefCountedAndCanMakeThreadSafeWeakPtr<ImageBuffer> {
@@ -95,9 +96,9 @@ public:
     WEBCORE_EXPORT static RefPtr<ImageBuffer> create(const FloatSize&, RenderingMode, RenderingPurpose, float resolutionScale, const DestinationColorSpace&, ImageBufferPixelFormat, GraphicsClient* = nullptr);
 
     template<typename BackendType, typename ImageBufferType = ImageBuffer, typename... Arguments>
-    static RefPtr<ImageBufferType> create(const FloatSize& size, float resolutionScale, const DestinationColorSpace& colorSpace, ImageBufferPixelFormat pixelFormat, RenderingPurpose purpose, const ImageBufferCreationContext& creationContext, Arguments&&... arguments)
+    static RefPtr<ImageBufferType> create(const FloatSize& size, float resolutionScale, const DestinationColorSpace& colorSpace, ImageBufferPixelFormat pixelFormat, RenderingPurpose purpose, String name, const ImageBufferCreationContext& creationContext, Arguments&&... arguments)
     {
-        Parameters parameters { size, resolutionScale, colorSpace, pixelFormat, purpose };
+        Parameters parameters { size, resolutionScale, colorSpace, pixelFormat, purpose, name };
         auto backendParameters = ImageBuffer::backendParameters(parameters);
         auto backend = BackendType::create(backendParameters, creationContext);
         if (!backend)

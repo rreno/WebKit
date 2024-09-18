@@ -201,7 +201,7 @@ void ARKitBadgeSystemImage::draw(GraphicsContext& graphicsContext, const FloatRe
     CIImage *translatedImage = [croppedImage imageByApplyingTransform:CGAffineTransformMakeTranslation(-flippedInsetBadgeRect.origin.x, -flippedInsetBadgeRect.origin.y)];
 
     auto surfaceDimension = useSmallBadge ? smallBadgeDimension : largeBadgeDimension;
-    std::unique_ptr<IOSurface> badgeSurface = IOSurface::create(&IOSurfacePool::sharedPoolSingleton(), { surfaceDimension, surfaceDimension }, DestinationColorSpace::SRGB());
+    std::unique_ptr<IOSurface> badgeSurface = IOSurface::create(&IOSurfacePool::sharedPoolSingleton(), { surfaceDimension, surfaceDimension }, DestinationColorSpace::SRGB(), "WebKit ARKit Badge System Image"_s);
     IOSurfaceRef surface = badgeSurface->surface();
     [ciContext render:translatedImage toIOSurface:surface bounds:badgeRect colorSpace:sRGBColorSpaceRef()];
     auto surfaceContext = badgeSurface->createPlatformContext();

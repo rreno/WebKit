@@ -983,7 +983,7 @@ TEST(IPCSerialization, Plist)
 TEST(IPCSerialization, Basic)
 {
     // CVPixelBuffer
-    auto s1 = WebCore::IOSurface::create(nullptr, { 5, 5 }, WebCore::DestinationColorSpace::SRGB());
+    auto s1 = WebCore::IOSurface::create(nullptr, { 5, 5 }, WebCore::DestinationColorSpace::SRGB(), "WebKit Test Surface"_s);
     auto pixelBuffer = WebCore::createCVPixelBuffer(s1->surface());
 
     runTestCF({ pixelBuffer->get() });

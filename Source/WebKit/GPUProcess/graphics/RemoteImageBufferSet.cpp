@@ -131,12 +131,12 @@ void RemoteImageBufferSet::endPrepareForDisplay(RenderingUpdateID renderingUpdat
 void RemoteImageBufferSet::ensureBufferForDisplay(ImageBufferSetPrepareBufferForDisplayInputData& inputData, SwapBuffersDisplayRequirement& displayRequirement, bool isSync)
 {
     assertIsCurrent(workQueue());
-    LOG_WITH_STREAM(RemoteLayerBuffers, stream << "GPU Process: ::ensureFrontBufferForDisplay " << " - front "
-        << m_frontBuffer << " (in-use " << (m_frontBuffer && protectedFrontBuffer()->isInUse()) << ") "
-        << m_backBuffer << " (in-use " << (m_backBuffer && protectedBackBuffer()->isInUse()) << ") "
-        << m_secondaryBackBuffer << " (in-use " << (m_secondaryBackBuffer && protectedSecondaryBackBuffer()->isInUse()) << ") ");
+    LOG_WITH_STREAM(RemoteLayerBuffers, stream << "GPU Process: ::ensureFrontBufferForDisplay "
+        << "- front " << m_frontBuffer << " (in-use " << (m_frontBuffer && protectedFrontBuffer()->isInUse()) << ") "
+        << " - back " << m_backBuffer << " (in-use " << (m_backBuffer && protectedBackBuffer()->isInUse()) << ") "
+        << " - secondary back " << m_secondaryBackBuffer << " (in-use " << (m_secondaryBackBuffer && protectedSecondaryBackBuffer()->isInUse()) << ") ");
 
-    displayRequirement = swapBuffersForDisplay(inputData.hasEmptyDirtyRegion, inputData.supportsPartialRepaint && !isSmallLayerBacking({ m_logicalSize, m_resolutionScale, m_colorSpace, m_pixelFormat, WebCore::RenderingPurpose::LayerBacking }));
+    displayRequirement = swapBuffersForDisplay(inputData.hasEmptyDirtyRegion, inputData.supportsPartialRepaint && !isSmallLayerBacking({ m_logicalSize, m_resolutionScale, m_colorSpace, m_pixelFormat, WebCore::RenderingPurpose::LayerBacking, inputData.name }));
     if (displayRequirement == SwapBuffersDisplayRequirement::NeedsFullDisplay) {
         auto layerBounds = WebCore::IntRect { { }, expandedIntSize(m_logicalSize) };
         MESSAGE_CHECK(isSync || inputData.dirtyRegion.contains(layerBounds), "Can't asynchronously require full display for a buffer set");
@@ -151,7 +151,7 @@ void RemoteImageBufferSet::ensureBufferForDisplay(ImageBufferSetPrepareBufferFor
         if (m_renderingPurpose == RenderingPurpose::LayerBacking || m_renderingPurpose == RenderingPurpose::DOM)
             creationContext.dynamicContentScalingResourceCache = ensureDynamicContentScalingResourceCache();
 #endif
-        m_frontBuffer = backend->allocateImageBuffer(m_logicalSize, m_renderingMode, m_renderingPurpose, m_resolutionScale, m_colorSpace, m_pixelFormat, WTFMove(creationContext), WebCore::RenderingResourceIdentifier::generate());
+        m_frontBuffer = backend->allocateImageBuffer(m_logicalSize, m_renderingMode, m_renderingPurpose, inputData.name, m_resolutionScale, m_colorSpace, m_pixelFormat, WTFMove(creationContext), WebCore::RenderingResourceIdentifier::generate());
         m_frontBufferIsCleared = true;
     }
 

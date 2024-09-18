@@ -184,7 +184,7 @@ void RemoteRenderingBackend::createDisplayListRecorder(RefPtr<ImageBuffer> image
 {
     assertIsCurrent(workQueue());
     if (!imageBuffer) {
-        auto errorImage = ImageBuffer::create<NullImageBufferBackend>({ 0, 0 }, 1, DestinationColorSpace::SRGB(), ImageBufferPixelFormat::BGRA8, RenderingPurpose::Unspecified, { }, identifier);
+        auto errorImage = ImageBuffer::create<NullImageBufferBackend>({ 0, 0 }, 1, DestinationColorSpace::SRGB(), ImageBufferPixelFormat::BGRA8, RenderingPurpose::Unspecified, emptyString(), { }, identifier);
         m_remoteDisplayLists.add(identifier, RemoteDisplayListRecorder::create(*errorImage.get(), identifier, *this));
         return;
     }
@@ -202,7 +202,7 @@ void RemoteRenderingBackend::didFailCreateImageBuffer(RenderingResourceIdentifie
     // On failure to create a remote image buffer we still create a null display list recorder.
     // Commands to draw to the failed image might have already be issued and we must process
     // them.
-    auto errorImage = ImageBuffer::create<NullImageBufferBackend>({ 0, 0 }, 1, DestinationColorSpace::SRGB(), ImageBufferPixelFormat::BGRA8, RenderingPurpose::Unspecified, { }, imageBufferIdentifier);
+    auto errorImage = ImageBuffer::create<NullImageBufferBackend>({ 0, 0 }, 1, DestinationColorSpace::SRGB(), ImageBufferPixelFormat::BGRA8, RenderingPurpose::Unspecified, emptyString(), { }, imageBufferIdentifier);
     RELEASE_ASSERT(errorImage);
     m_remoteDisplayLists.add(imageBufferIdentifier, RemoteDisplayListRecorder::create(*errorImage, imageBufferIdentifier, *this));
     m_remoteImageBuffers.add(imageBufferIdentifier, RemoteImageBuffer::create(errorImage.releaseNonNull(), *this));
@@ -278,7 +278,7 @@ void RemoteRenderingBackend::didDrawRemoteToPDF(PageIdentifier pageID, Rendering
 #endif
 
 template<typename ImageBufferType>
-static RefPtr<ImageBuffer> allocateImageBufferInternal(const FloatSize& logicalSize, RenderingMode renderingMode, RenderingPurpose purpose, float resolutionScale, const DestinationColorSpace& colorSpace, ImageBufferPixelFormat pixelFormat, ImageBufferCreationContext& creationContext, RenderingResourceIdentifier imageBufferIdentifier)
+static RefPtr<ImageBuffer> allocateImageBufferInternal(const FloatSize& logicalSize, RenderingMode renderingMode, RenderingPurpose purpose, String name, float resolutionScale, const DestinationColorSpace& colorSpace, ImageBufferPixelFormat pixelFormat, ImageBufferCreationContext& creationContext, RenderingResourceIdentifier imageBufferIdentifier)
 {
     RefPtr<ImageBuffer> imageBuffer;
 
@@ -286,20 +286,20 @@ static RefPtr<ImageBuffer> allocateImageBufferInternal(const FloatSize& logicalS
     case RenderingMode::Accelerated:
 #if HAVE(IOSURFACE)
         if (isSmallLayerBacking({ logicalSize, resolutionScale, colorSpace, pixelFormat, purpose }))
-            imageBuffer = ImageBuffer::create<ImageBufferShareableMappedIOSurfaceBitmapBackend, ImageBufferType>(logicalSize, resolutionScale, colorSpace, pixelFormat, purpose, creationContext, imageBufferIdentifier);
+            imageBuffer = ImageBuffer::create<ImageBufferShareableMappedIOSurfaceBitmapBackend, ImageBufferType>(logicalSize, resolutionScale, colorSpace, pixelFormat, purpose, name, creationContext, imageBufferIdentifier);
         if (!imageBuffer)
-            imageBuffer = ImageBuffer::create<ImageBufferShareableMappedIOSurfaceBackend, ImageBufferType>(logicalSize, resolutionScale, colorSpace, pixelFormat, purpose, creationContext, imageBufferIdentifier);
+            imageBuffer = ImageBuffer::create<ImageBufferShareableMappedIOSurfaceBackend, ImageBufferType>(logicalSize, resolutionScale, colorSpace, pixelFormat, purpose, name, creationContext, imageBufferIdentifier);
 #endif
         [[fallthrough]];
 
     case RenderingMode::Unaccelerated:
         if (!imageBuffer)
-            imageBuffer = ImageBuffer::create<ImageBufferShareableBitmapBackend, ImageBufferType>(logicalSize, resolutionScale, colorSpace, pixelFormat, purpose, creationContext, imageBufferIdentifier);
+            imageBuffer = ImageBuffer::create<ImageBufferShareableBitmapBackend, ImageBufferType>(logicalSize, resolutionScale, colorSpace, pixelFormat, purpose, name, creationContext, imageBufferIdentifier);
         break;
 
     case RenderingMode::PDFDocument:
 #if USE(CG)
-        imageBuffer = ImageBuffer::create<ImageBufferCGPDFDocumentBackend, ImageBufferType>(logicalSize, resolutionScale, colorSpace, pixelFormat, purpose, creationContext, imageBufferIdentifier);
+        imageBuffer = ImageBuffer::create<ImageBufferCGPDFDocumentBackend, ImageBufferType>(logicalSize, resolutionScale, colorSpace, pixelFormat, purpose, name, creationContext, imageBufferIdentifier);
 #endif
         break;
 
@@ -316,7 +316,7 @@ static void adjustImageBufferRenderingMode(const RemoteSharedResourceCache& shar
         renderingMode = RenderingMode::Unaccelerated;
 }
 
-RefPtr<ImageBuffer> RemoteRenderingBackend::allocateImageBuffer(const FloatSize& logicalSize, RenderingMode renderingMode, RenderingPurpose purpose, float resolutionScale, const DestinationColorSpace& colorSpace, ImageBufferPixelFormat pixelFormat, ImageBufferCreationContext creationContext, RenderingResourceIdentifier imageBufferIdentifier)
+RefPtr<ImageBuffer> RemoteRenderingBackend::allocateImageBuffer(const FloatSize& logicalSize, RenderingMode renderingMode, RenderingPurpose purpose, String name, float resolutionScale, const DestinationColorSpace& colorSpace, ImageBufferPixelFormat pixelFormat, ImageBufferCreationContext creationContext, RenderingResourceIdentifier imageBufferIdentifier)
 {
     assertIsCurrent(workQueue());
     if (purpose == RenderingPurpose::Canvas && protectedSharedResourceCache()->reachedImageBufferForCanvasLimit())
@@ -328,11 +328,11 @@ RefPtr<ImageBuffer> RemoteRenderingBackend::allocateImageBuffer(const FloatSize&
 
 #if ENABLE(RE_DYNAMIC_CONTENT_SCALING)
     if (m_gpuConnectionToWebProcess->isDynamicContentScalingEnabled() && (purpose == RenderingPurpose::LayerBacking || purpose == RenderingPurpose::DOM))
-        imageBuffer = allocateImageBufferInternal<DynamicContentScalingBifurcatedImageBuffer>(logicalSize, renderingMode, purpose, resolutionScale, colorSpace, pixelFormat, creationContext, imageBufferIdentifier);
+        imageBuffer = allocateImageBufferInternal<DynamicContentScalingBifurcatedImageBuffer>(logicalSize, renderingMode, purpose, name, resolutionScale, colorSpace, pixelFormat, creationContext, imageBufferIdentifier);
 #endif
 
     if (!imageBuffer)
-        imageBuffer = allocateImageBufferInternal<ImageBuffer>(logicalSize, renderingMode, purpose, resolutionScale, colorSpace, pixelFormat, creationContext, imageBufferIdentifier);
+        imageBuffer = allocateImageBufferInternal<ImageBuffer>(logicalSize, renderingMode, purpose, name, resolutionScale, colorSpace, pixelFormat, creationContext, imageBufferIdentifier);
 
     return imageBuffer;
 }
@@ -341,7 +341,7 @@ RefPtr<ImageBuffer> RemoteRenderingBackend::allocateImageBuffer(const FloatSize&
 void RemoteRenderingBackend::createImageBuffer(const FloatSize& logicalSize, RenderingMode renderingMode, RenderingPurpose purpose, float resolutionScale, const DestinationColorSpace& colorSpace, ImageBufferPixelFormat pixelFormat, RenderingResourceIdentifier imageBufferIdentifier)
 {
     assertIsCurrent(workQueue());
-    RefPtr<ImageBuffer> imageBuffer = allocateImageBuffer(logicalSize, renderingMode, purpose, resolutionScale, colorSpace, pixelFormat, { }, imageBufferIdentifier);
+    RefPtr<ImageBuffer> imageBuffer = allocateImageBuffer(logicalSize, renderingMode, purpose, emptyString(), resolutionScale, colorSpace, pixelFormat, { }, imageBufferIdentifier);
 
     if (imageBuffer)
         didCreateImageBuffer(imageBuffer.releaseNonNull());
@@ -476,6 +476,8 @@ void RemoteRenderingBackend::prepareImageBufferSetsForDisplay(Vector<ImageBuffer
 {
     assertIsCurrent(workQueue());
 
+//    static uint64_t prepareCount = 0;
+//    WTFLogAlways("RemoteRenderingBackend::prepareImageBufferSetsForDisplay: %" PRIu64 " (begin)", prepareCount);
     for (unsigned i = 0; i < swapBuffersInput.size(); ++i) {
         RefPtr<RemoteImageBufferSet> remoteImageBufferSet = m_remoteImageBufferSets.get(swapBuffersInput[i].remoteBufferSet);
         MESSAGE_CHECK(remoteImageBufferSet, "BufferSet is being updated before being created");
@@ -485,6 +487,8 @@ void RemoteRenderingBackend::prepareImageBufferSetsForDisplay(Vector<ImageBuffer
         if (displayRequirement != SwapBuffersDisplayRequirement::NeedsNoDisplay)
             remoteImageBufferSet->prepareBufferForDisplay(swapBuffersInput[i].dirtyRegion, swapBuffersInput[i].requiresClearedPixels);
     }
+//    WTFLogAlways("RemoteRenderingBackend::prepareImageBufferSetsForDisplay: %" PRIu64 " (end)", prepareCount++);
+    WTFLogAlways("RemoteRenderingBackend::prepareImageBufferSetsForDisplay: memoryCostThisFrame: %" PRIu64 " bytes.", IOSurface::allocationCostSinceLastChecked());
 }
 
 void RemoteRenderingBackend::prepareImageBufferSetsForDisplaySync(Vector<ImageBufferSetPrepareBufferForDisplayInputData> swapBuffersInput, CompletionHandler<void(Vector<SwapBuffersDisplayRequirement>&&)>&& completionHandler)

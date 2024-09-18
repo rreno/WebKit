@@ -87,7 +87,7 @@ RefPtr<ImageBuffer> ImageBuffer::create(const FloatSize& size, RenderingMode ren
             ImageBufferCreationContext creationContext;
             if (graphicsClient)
                 creationContext.displayID = graphicsClient->displayID();
-            if (auto imageBuffer = ImageBuffer::create<ImageBufferIOSurfaceBackend>(size, resolutionScale, colorSpace, pixelFormat, purpose, creationContext))
+            if (auto imageBuffer = ImageBuffer::create<ImageBufferIOSurfaceBackend>(size, resolutionScale, colorSpace, pixelFormat, purpose, emptyString(), creationContext))
                 return imageBuffer;
         }
 #elif USE(SKIA)
@@ -97,11 +97,11 @@ RefPtr<ImageBuffer> ImageBuffer::create(const FloatSize& size, RenderingMode ren
         [[fallthrough]];
 
     case RenderingMode::Unaccelerated:
-        return create<ImageBufferPlatformBitmapBackend>(size, resolutionScale, colorSpace, pixelFormat, purpose, { });
+        return create<ImageBufferPlatformBitmapBackend>(size, resolutionScale, colorSpace, pixelFormat, purpose, emptyString(), { });
 
     case RenderingMode::PDFDocument:
 #if USE(CG)
-        return ImageBuffer::create<ImageBufferCGPDFDocumentBackend>(size, resolutionScale, colorSpace, pixelFormat, purpose, { });
+        return ImageBuffer::create<ImageBufferCGPDFDocumentBackend>(size, resolutionScale, colorSpace, pixelFormat, purpose, "PDF ImageBuffer (WebKit)"_s, { });
 #else
         return nullptr;
 #endif
@@ -134,7 +134,7 @@ IntSize ImageBuffer::calculateBackendSize(FloatSize logicalSize, float resolutio
 
 ImageBufferBackendParameters ImageBuffer::backendParameters(const ImageBufferParameters& parameters)
 {
-    return { calculateBackendSize(parameters.logicalSize, parameters.resolutionScale), parameters.resolutionScale, parameters.colorSpace, parameters.pixelFormat, parameters.purpose };
+    return { calculateBackendSize(parameters.logicalSize, parameters.resolutionScale), parameters.resolutionScale, parameters.colorSpace, parameters.pixelFormat, parameters.purpose, parameters.name };
 }
 
 bool ImageBuffer::sizeNeedsClamping(const FloatSize& size)

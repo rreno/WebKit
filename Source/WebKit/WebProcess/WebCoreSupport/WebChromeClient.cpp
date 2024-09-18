@@ -980,7 +980,7 @@ RefPtr<ImageBuffer> WebChromeClient::createImageBuffer(const FloatSize& size, Re
         return protectedPage()->ensureRemoteRenderingBackendProxy().createImageBuffer(size, renderingMode, purpose, resolutionScale, colorSpace, pixelFormat);
 
     if (purpose == RenderingPurpose::ShareableSnapshot || purpose == RenderingPurpose::ShareableLocalSnapshot)
-        return ImageBuffer::create<ImageBufferShareableBitmapBackend>(size, resolutionScale, colorSpace, ImageBufferPixelFormat::BGRA8, purpose, { });
+        return ImageBuffer::create<ImageBufferShareableBitmapBackend>(size, resolutionScale, colorSpace, ImageBufferPixelFormat::BGRA8, purpose, emptyString(), { });
 
     return nullptr;
 }

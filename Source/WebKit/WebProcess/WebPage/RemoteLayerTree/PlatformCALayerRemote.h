@@ -187,6 +187,7 @@ public:
     void setBlendMode(WebCore::BlendMode) override;
 
     void setName(const String&) override;
+    String name() const final;
 
     void setSpeed(float) override;
 
