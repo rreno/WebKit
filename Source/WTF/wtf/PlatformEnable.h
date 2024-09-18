@@ -928,7 +928,7 @@
 #define ENABLE_BINDING_INTEGRITY 1
 #endif
 
-#if !defined(ENABLE_TREE_DEBUGGING) && !defined(NDEBUG)
+#if !defined(ENABLE_TREE_DEBUGGING) // && !defined(NDEBUG)
 #define ENABLE_TREE_DEBUGGING 1
 #endif
 

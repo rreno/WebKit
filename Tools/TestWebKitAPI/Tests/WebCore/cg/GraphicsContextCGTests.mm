@@ -108,7 +108,7 @@ TEST(GraphicsContextTests, IOSurfaceRenderingModeIsAccelerated)
 {
     auto srgb = DestinationColorSpace::SRGB();
     IntSize size { 3, 3 };
-    auto surface = WebCore::IOSurface::create(nullptr, size, srgb);
+    auto surface = WebCore::IOSurface::create(nullptr, size, srgb, "WebKit Test Surface"_s);
     ASSERT_NE(surface, nullptr);
     auto bitsPerPixel = 32;
     auto bitsPerComponent = 8;
@@ -192,7 +192,7 @@ TEST(GraphicsContextTests, DrawsReportHasDrawn)
 {
     auto srgb = DestinationColorSpace::SRGB();
     IntSize size { 3, 3 };
-    auto surface = WebCore::IOSurface::create(nullptr, size, srgb);
+    auto surface = WebCore::IOSurface::create(nullptr, size, srgb, "WebKit Test Surface"_s);
     ASSERT_NE(surface, nullptr);
     auto bitsPerPixel = 32;
     auto bitsPerComponent = 8;

@@ -49,7 +49,7 @@ Ref<WebImage> WebImage::create(const IntSize& size, ImageOptions options, const 
     }
 
     if (options.contains(ImageOption::Shareable)) {
-        auto buffer = ImageBuffer::create<ImageBufferShareableBitmapBackend>(size, 1, colorSpace, ImageBufferPixelFormat::BGRA8, RenderingPurpose::ShareableSnapshot, { });
+        auto buffer = ImageBuffer::create<ImageBufferShareableBitmapBackend>(size, 1, colorSpace, ImageBufferPixelFormat::BGRA8, RenderingPurpose::ShareableSnapshot, emptyString(), { });
         if (!buffer)
             return createEmpty();
         return WebImage::create(buffer.releaseNonNull());

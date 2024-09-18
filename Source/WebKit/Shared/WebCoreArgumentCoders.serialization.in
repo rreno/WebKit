@@ -4672,6 +4672,7 @@ header: <WebCore/ImageBuffer.h>
     WebCore::DestinationColorSpace colorSpace
     WebCore::ImageBufferPixelFormat pixelFormat;
     WebCore::RenderingPurpose purpose;
+    String name;
 };
 
 enum class WebCore::PreserveResolution : bool;

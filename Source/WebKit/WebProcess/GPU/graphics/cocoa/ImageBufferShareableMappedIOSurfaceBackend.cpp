@@ -47,7 +47,11 @@ std::unique_ptr<ImageBufferShareableMappedIOSurfaceBackend> ImageBufferShareable
     if (backendSize.isEmpty())
         return nullptr;
 
-    auto surface = IOSurface::create(creationContext.surfacePool, backendSize, parameters.colorSpace, IOSurface::nameForRenderingPurpose(parameters.purpose), convertToIOSurfaceFormat(parameters.pixelFormat));
+    std::unique_ptr<IOSurface> surface;
+    if (parameters.purpose != RenderingPurpose::LayerBacking)
+        surface = IOSurface::create(creationContext.surfacePool, backendSize, parameters.colorSpace, IOSurface::nameForRenderingPurpose(parameters.purpose), convertToIOSurfaceFormat(parameters.pixelFormat));
+    else
+        surface = IOSurface::create(creationContext.surfacePool, backendSize, parameters.colorSpace, parameters.name, convertToIOSurfaceFormat(parameters.pixelFormat));
     if (!surface)
         return nullptr;
     if (creationContext.resourceOwner)

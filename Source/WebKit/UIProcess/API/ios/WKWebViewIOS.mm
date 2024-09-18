@@ -77,6 +77,7 @@
 #import <wtf/Box.h>
 #import <wtf/EnumTraits.h>
 #import <wtf/FixedVector.h>
+#import <wtf/MemoryFootprint.h>
 #import <wtf/NeverDestroyed.h>
 #import <wtf/RefCounted.h>
 #import <wtf/RuntimeApplicationChecks.h>
@@ -2061,8 +2062,12 @@ static WebCore::FloatPoint constrainContentOffset(WebCore::FloatPoint contentOff
     return self._currentContentView;
 }
 
+static CGFloat beforeZoomScale = 0.0;
+
 - (void)scrollViewWillBeginZooming:(UIScrollView *)scrollView withView:(UIView *)view
 {
+    WTFLogAlways("scrollViewWillBeginZooming:");
+    beforeZoomScale = [self _contentZoomScale];
     if (![self usesStandardContentView]) {
         if ([_customContentView respondsToSelector:@selector(web_scrollViewWillBeginZooming:withView:)])
             [_customContentView web_scrollViewWillBeginZooming:scrollView withView:view];
@@ -2280,6 +2285,7 @@ static WebCore::FloatPoint constrainContentOffset(WebCore::FloatPoint contentOff
 
 - (void)scrollViewDidZoom:(UIScrollView *)scrollView
 {
+    WTFLogAlways("scrollViewDidZoom: pageScaleFactor: %.3f physFootprint: %zu", _page->pageScaleFactor(), WTF::memoryFootprint());
     if (![self usesStandardContentView] && [_customContentView respondsToSelector:@selector(web_scrollViewDidZoom:)])
         [_customContentView web_scrollViewDidZoom:scrollView];
 
@@ -2297,6 +2303,7 @@ static WebCore::FloatPoint constrainContentOffset(WebCore::FloatPoint contentOff
 
 - (void)scrollViewDidEndZooming:(UIScrollView *)scrollView withView:(UIView *)view atScale:(CGFloat)scale
 {
+    WTFLogAlways("scrollViewDidEndZooming: %s (old scale: %.3f new scale: %.3f)", scale < beforeZoomScale ? "zoomOut" : "zoomIn", beforeZoomScale, scale);
     if (![self usesStandardContentView] && [_customContentView respondsToSelector:@selector(web_scrollViewDidEndZooming:withView:atScale:)])
         [_customContentView web_scrollViewDidEndZooming:scrollView withView:view atScale:scale];
 

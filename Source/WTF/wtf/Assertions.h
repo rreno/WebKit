@@ -91,7 +91,7 @@
 #endif
 
 #ifndef LOG_DISABLED
-#define LOG_DISABLED !ASSERT_ENABLED
+#define LOG_DISABLED 0
 #endif
 
 #if ENABLE(RELEASE_LOG)

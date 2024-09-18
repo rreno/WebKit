@@ -52,19 +52,19 @@ using PlatformDisplayID = uint32_t;
 class IOSurface final {
     WTF_MAKE_TZONE_ALLOCATED_EXPORT(IOSurface, WEBCORE_EXPORT);
 public:
+    // Names are used to annotate the surface within the IOSurface framework. Then tools such as
+    // `IOSDebug` or vmmap(1) will show the surface name in their output which can make debugging complex
+    // web content more tractable. We used to have a generic name for all layer backing surfaces but in practice
+    // that is the vast majority of surfaces allocated for web content. It was nearly impossible to tell with tooling
+    // whether a backing surface was for tiles or a GraphicsLayer. So we don't include that case in this enum
+    // instead requiring a more descriptive String be passed in to the IOSurface::create overload. 
     enum class Name : uint8_t {
-        Default,
-        DOM,
         Canvas,
-        GraphicsContextGL,
+        DOM,
         ImageBuffer,
-        ImageBufferShareableMapped,
-        LayerBacking,
-        BitmapOnlyLayerBacking,
         MediaPainting,
         Snapshot,
-        ShareableSnapshot,
-        ShareableLocalSnapshot,
+        WebGL,
         WebGPU,
     };
 
@@ -127,7 +127,8 @@ public:
         RetainPtr<IOSurfaceRef> m_surface;
     };
 
-    WEBCORE_EXPORT static std::unique_ptr<IOSurface> create(IOSurfacePool*, IntSize, const DestinationColorSpace&, Name = Name::Default, Format = Format::BGRA);
+    WEBCORE_EXPORT static std::unique_ptr<IOSurface> create(IOSurfacePool*, IntSize, const DestinationColorSpace&, Name, Format = Format::BGRA);
+    WEBCORE_EXPORT static std::unique_ptr<IOSurface> create(IOSurfacePool*, IntSize, const DestinationColorSpace&, String name, Format = Format::BGRA);
     WEBCORE_EXPORT static std::unique_ptr<IOSurface> createFromImage(IOSurfacePool*, CGImageRef);
 
     WEBCORE_EXPORT static std::unique_ptr<IOSurface> createFromSendRight(const WTF::MachSendRight&&);
@@ -153,8 +154,11 @@ public:
     // Passed in context is the context through which the contents was drawn.
     WEBCORE_EXPORT static RetainPtr<CGImageRef> sinkIntoImage(std::unique_ptr<IOSurface>, RetainPtr<CGContextRef>);
 
-    WEBCORE_EXPORT static Name nameForRenderingPurpose(RenderingPurpose);
-    Name name() const { return m_name; }
+    WEBCORE_EXPORT static String nameForRenderingPurpose(RenderingPurpose);
+    String nameString() const { return m_nameString; }
+    void setNameString(const String& name) { m_nameString = name; }
+
+    WEBCORE_EXPORT static uint64_t allocationCostSinceLastChecked();
 
 #ifdef __OBJC__
     id asLayerContents() const { return (__bridge id)m_surface.get(); }
@@ -195,6 +199,7 @@ public:
 #if HAVE(IOSURFACE_ACCELERATOR)
     WEBCORE_EXPORT static bool allowConversionFromFormatToFormat(Format, Format);
     WEBCORE_EXPORT static void convertToFormat(IOSurfacePool*, std::unique_ptr<WebCore::IOSurface>&& inSurface, Name, Format, Function<void(std::unique_ptr<WebCore::IOSurface>)>&&);
+    WEBCORE_EXPORT static void convertToFormat(IOSurfacePool*, std::unique_ptr<WebCore::IOSurface>&& inSurface, String name, Format, Function<void(std::unique_ptr<WebCore::IOSurface>)>&&);
 #endif // HAVE(IOSURFACE_ACCELERATOR)
 
     WEBCORE_EXPORT void setOwnershipIdentity(const ProcessIdentity&);
@@ -203,14 +208,12 @@ public:
     RetainPtr<CGContextRef> createCompatibleBitmap(unsigned width, unsigned height);
 
 private:
-    IOSurface(IntSize, const DestinationColorSpace&, Name, Format, bool& success);
+    IOSurface(IntSize, const DestinationColorSpace&, String, Format, bool& success);
     IOSurface(IOSurfaceRef, std::optional<DestinationColorSpace>&&);
 
     void setColorSpaceProperty();
     void ensureColorSpace();
     std::optional<DestinationColorSpace> surfaceColorSpace() const;
-
-    void setName(Name name) { m_name = name; }
 
     struct BitmapConfiguration {
         CGBitmapInfo bitmapInfo;
@@ -230,7 +233,7 @@ private:
 
     static std::optional<IntSize> s_maximumSize;
 
-    Name m_name;
+    String m_nameString;
 
     WEBCORE_EXPORT friend WTF::TextStream& operator<<(WTF::TextStream&, const WebCore::IOSurface&);
 };

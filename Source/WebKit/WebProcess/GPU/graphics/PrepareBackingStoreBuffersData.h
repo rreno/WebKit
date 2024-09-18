@@ -46,6 +46,7 @@ struct ImageBufferSetPrepareBufferForDisplayInputData {
     bool supportsPartialRepaint { true };
     bool hasEmptyDirtyRegion { true };
     bool requiresClearedPixels { true };
+    String name { emptyString() };
 };
 
 struct ImageBufferSetPrepareBufferForDisplayOutputData {

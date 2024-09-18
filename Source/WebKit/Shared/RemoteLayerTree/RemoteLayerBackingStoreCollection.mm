@@ -97,6 +97,7 @@ void RemoteLayerBackingStoreCollection::prepareBackingStoresForDisplay(RemoteLay
                 remoteBackingStore->supportsPartialRepaint(),
                 remoteBackingStore->hasEmptyDirtyRegion(),
                 remoteBackingStore->drawingRequiresClearedPixels(),
+                backingStore->layer().name(),
             });
 
             backingStoreList.append(*remoteBackingStore);

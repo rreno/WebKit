@@ -61,7 +61,7 @@ ImageBuffer* FilterImage::imageBufferFromCIImage()
     if (m_imageBuffer)
         return m_imageBuffer.get();
 
-    m_imageBuffer = ImageBuffer::create<ImageBufferIOSurfaceBackend>(m_absoluteImageRect.size(), 1, m_colorSpace, ImageBufferPixelFormat::BGRA8, RenderingPurpose::Unspecified, { });
+    m_imageBuffer = ImageBuffer::create<ImageBufferIOSurfaceBackend>(m_absoluteImageRect.size(), 1, m_colorSpace, ImageBufferPixelFormat::BGRA8, RenderingPurpose::Unspecified, "FilterImage"_s, { });
     if (!m_imageBuffer)
         return nullptr;
 

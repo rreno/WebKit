@@ -30,6 +30,7 @@ header: "PrepareBackingStoreBuffersData.h"
     bool supportsPartialRepaint;
     bool hasEmptyDirtyRegion;
     bool requiresClearedPixels;
+    WTF::String name;
 };
 
 [CustomHeader, RValue] struct WebKit::ImageBufferSetPrepareBufferForDisplayOutputData {

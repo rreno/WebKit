@@ -151,6 +151,7 @@ public:
     void setBlendMode(BlendMode) override;
 
     void setName(const String&) override;
+    String name() const final;
 
     void setSpeed(float) override;
 
