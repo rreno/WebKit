@@ -270,12 +270,14 @@ void PlatformCALayerRemote::ensureBackingStore()
         if (!m_context)
             return false;
 
-        if (!m_properties.backingStoreOrProperties.store)
+        if (!m_properties.backingStoreOrProperties.store) {
             return true;
+        }
 
         // A layer pulled out of a pool may have existing backing store which we mustn't reuse if it lives in the wrong process.
-        if (m_properties.backingStoreOrProperties.store->processModel() != RemoteLayerBackingStore::processModelForLayer(*this))
+        if (m_properties.backingStoreOrProperties.store->processModel() != RemoteLayerBackingStore::processModelForLayer(*this)) {
             return true;
+        }
 
         return false;
     }();
@@ -915,6 +917,11 @@ void PlatformCALayerRemote::setName(const String& value)
 {
     m_properties.name = value;
     m_properties.notePropertiesChanged(LayerChange::NameChanged);
+}
+
+String PlatformCALayerRemote::name() const
+{
+    return m_properties.name;
 }
 
 void PlatformCALayerRemote::setSpeed(float value)

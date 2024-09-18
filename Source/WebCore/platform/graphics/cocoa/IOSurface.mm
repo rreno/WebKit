@@ -50,50 +50,50 @@
 
 namespace WebCore {
 
+static std::atomic<uint64_t> s_frameAllocationCost { 0 };
+
 WTF_MAKE_TZONE_ALLOCATED_IMPL(IOSurface);
 
-static auto surfaceNameToNSString(IOSurface::Name name)
+uint64_t IOSurface::allocationCostSinceLastChecked()
+{
+    return s_frameAllocationCost.exchange(0);
+}
+
+static constexpr auto nameStringFrom(IOSurface::Name name)
 {
     switch (name) {
-    case IOSurface::Name::Default:
-        return @"WebKit";
-    case IOSurface::Name::DOM:
-        return @"WebKit DOM";
     case IOSurface::Name::Canvas:
-        return @"WebKit Canvas";
-    case IOSurface::Name::GraphicsContextGL:
-        return @"WebKit GraphicsContextGL";
+        return "WebKit Canvas"_s;
+    case IOSurface::Name::DOM:
+        return "WebKit DOM"_s;
     case IOSurface::Name::ImageBuffer:
-        return @"WebKit ImageBuffer";
-    case IOSurface::Name::ImageBufferShareableMapped:
-        return @"WebKit ImageBufferShareableMapped";
-    case IOSurface::Name::LayerBacking:
-        return @"WebKit LayerBacking";
-    case IOSurface::Name::BitmapOnlyLayerBacking:
-        return @"WebKit LayerBacking (bitmap only)";
+        return "WebKit ImageBuffer"_s;
     case IOSurface::Name::MediaPainting:
-        return @"WebKit MediaPainting";
+        return "WebKit MediaPainting"_s;
     case IOSurface::Name::Snapshot:
-        return @"WKWebView Snapshot";
-    case IOSurface::Name::ShareableSnapshot:
-        return @"WKWebView Snapshot (shareable)";
-    case IOSurface::Name::ShareableLocalSnapshot:
-        return @"WKWebView Snapshot (shareable local)";
+        return "WebKit Snapshot"_s;
+    case IOSurface::Name::WebGL:
+        return "WebKit WebGL"_s;
     case IOSurface::Name::WebGPU:
-        return @"WebKit WebGPU";
+        return "WebKit WebGPU"_s;
     }
 }
 
-std::unique_ptr<IOSurface> IOSurface::create(IOSurfacePool* pool, IntSize size, const DestinationColorSpace& colorSpace, IOSurface::Name name, Format pixelFormat)
+std::unique_ptr<IOSurface> IOSurface::create(IOSurfacePool* pool, IntSize size, const DestinationColorSpace& colorSpace, Name name, Format pixelFormat)
+{
+    return IOSurface::create(pool, size, colorSpace, nameStringFrom(name), pixelFormat);
+}
+
+std::unique_ptr<IOSurface> IOSurface::create(IOSurfacePool* pool, IntSize size, const DestinationColorSpace& colorSpace, String name, Format pixelFormat)
 {
     ASSERT(ProcessCapabilities::canUseAcceleratedBuffers());
 
     if (pool) {
         if (auto cachedSurface = pool->takeSurface(size, colorSpace, pixelFormat)) {
             LOG_WITH_STREAM(IOSurface, stream << "IOSurface::create took from pool: " << *cachedSurface);
-            if (cachedSurface->name() != name) {
-                IOSurfaceSetValue(cachedSurface->surface(), kIOSurfaceName, surfaceNameToNSString(name));
-                cachedSurface->setName(name);
+            if (cachedSurface->nameString() != name) {
+                IOSurfaceSetValue(cachedSurface->surface(), kIOSurfaceName, name);
+                cachedSurface->setNameString(name);
             }
             return cachedSurface;
         }
@@ -134,7 +134,7 @@ std::unique_ptr<IOSurface> IOSurface::createFromImage(IOSurfacePool* pool, CGIma
     size_t width = CGImageGetWidth(image);
     size_t height = CGImageGetHeight(image);
 
-    auto surface = IOSurface::create(pool, IntSize(width, height), DestinationColorSpace { CGImageGetColorSpace(image) }, Name::ImageBuffer);
+    auto surface = IOSurface::create(pool, IntSize(width, height), DestinationColorSpace { CGImageGetColorSpace(image) }, "WebKit ImageBuffer"_s);
     if (!surface)
         return nullptr;
     auto context = surface->createPlatformContext();
@@ -148,7 +148,7 @@ void IOSurface::moveToPool(std::unique_ptr<IOSurface>&& surface, IOSurfacePool* 
         pool->addSurface(WTFMove(surface));
 }
 
-static NSDictionary *optionsForBiplanarSurface(IntSize size, unsigned pixelFormat, size_t firstPlaneBytesPerPixel, size_t secondPlaneBytesPerPixel, IOSurface::Name name)
+static NSDictionary *optionsForBiplanarSurface(IntSize size, unsigned pixelFormat, size_t firstPlaneBytesPerPixel, size_t secondPlaneBytesPerPixel, NSString* name)
 {
     int width = size.width();
     int height = size.height();
@@ -188,11 +188,11 @@ static NSDictionary *optionsForBiplanarSurface(IntSize size, unsigned pixelForma
         (id)kIOSurfaceCacheMode: @(kIOMapWriteCombineCache),
 #endif
         (id)kIOSurfacePlaneInfo: planeInfo,
-        (id)kIOSurfaceName: surfaceNameToNSString(name)
+        (id)kIOSurfaceName: [name stringByAppendingString:@" (WebKit)"],
     };
 }
 
-static NSDictionary *optionsForSurface(IntSize size, unsigned bitsPerPixel, unsigned pixelFormat, IOSurface::Name name)
+static NSDictionary *optionsForSurface(IntSize size, unsigned bitsPerPixel, unsigned pixelFormat, NSString* name)
 {
     int width = size.width();
     int height = size.height();
@@ -217,27 +217,27 @@ static NSDictionary *optionsForSurface(IntSize size, unsigned bitsPerPixel, unsi
         (id)kIOSurfaceCacheMode: @(kIOMapWriteCombineCache),
 #endif
         (id)kIOSurfaceElementHeight: @(1),
-        (id)kIOSurfaceName: surfaceNameToNSString(name)
+        (id)kIOSurfaceName: [name stringByAppendingString:@" (WebKit)"],
     };
 }
 
-static NSDictionary *optionsFor32BitSurface(IntSize size, unsigned pixelFormat, IOSurface::Name name)
+static NSDictionary *optionsFor32BitSurface(IntSize size, unsigned pixelFormat, NSString* name)
 {
     return optionsForSurface(size, 32, pixelFormat, name);
 }
 
 #if HAVE(HDR_SUPPORT)
-static NSDictionary *optionsFor64BitSurface(IntSize size, unsigned pixelFormat, IOSurface::Name name)
+static NSDictionary *optionsFor64BitSurface(IntSize size, unsigned pixelFormat, NSString* name)
 {
     return optionsForSurface(size, 64, pixelFormat, name);
 }
 #endif
 
-IOSurface::IOSurface(IntSize size, const DestinationColorSpace& colorSpace, IOSurface::Name name, Format format, bool& success)
+IOSurface::IOSurface(IntSize size, const DestinationColorSpace& colorSpace, String name, Format format, bool& success)
     : m_format(format)
     , m_colorSpace(colorSpace)
     , m_size(size)
-    , m_name(name)
+    , m_nameString(name)
 {
     ASSERT(!success);
     ASSERT(!size.isEmpty());
@@ -275,6 +275,7 @@ IOSurface::IOSurface(IntSize size, const DestinationColorSpace& colorSpace, IOSu
     if (success) {
         setColorSpaceProperty();
         m_totalBytes = IOSurfaceGetAllocSize(m_surface.get());
+        s_frameAllocationCost += m_totalBytes;
     } else
         RELEASE_LOG_ERROR(Layers, "IOSurface creation failed for size: (%d %d) and format: (%d)", size.width(), size.height(), enumToUnderlyingType(*m_format));
 }
@@ -590,6 +591,11 @@ bool IOSurface::allowConversionFromFormatToFormat(Format sourceFormat, Format de
 
 void IOSurface::convertToFormat(IOSurfacePool* pool, std::unique_ptr<IOSurface>&& inSurface, Name name, Format format, WTF::Function<void(std::unique_ptr<IOSurface>)>&& callback)
 {
+    return IOSurface::convertToFormat(pool, WTFMove(inSurface), nameStringFrom(name), format, WTFMove(callback));
+}
+
+void IOSurface::convertToFormat(IOSurfacePool* pool, std::unique_ptr<IOSurface>&& inSurface, String name, Format format, WTF::Function<void(std::unique_ptr<IOSurface>)>&& callback)
+{
     static IOSurfaceAcceleratorRef accelerator;
     if (!accelerator) {
         IOSurfaceAcceleratorCreate(nullptr, nullptr, &accelerator);
@@ -690,38 +696,26 @@ std::optional<DestinationColorSpace> IOSurface::surfaceColorSpace() const
     return DestinationColorSpace { colorSpaceCF };
 }
 
-IOSurface::Name IOSurface::nameForRenderingPurpose(RenderingPurpose purpose)
+String IOSurface::nameForRenderingPurpose(RenderingPurpose purpose)
 {
     switch (purpose) {
-    case RenderingPurpose::Unspecified:
-        return Name::ImageBufferShareableMapped;
-
     case RenderingPurpose::Canvas:
-        return Name::Canvas;
-
+        return "WebKit Canvas"_s;
     case RenderingPurpose::DOM:
-        return Name::DOM;
-
-    case RenderingPurpose::LayerBacking:
-        return Name::LayerBacking;
-
-    case RenderingPurpose::BitmapOnlyLayerBacking:
-        return Name::BitmapOnlyLayerBacking;
-
-    case RenderingPurpose::Snapshot:
-        return Name::Snapshot;
-
-    case RenderingPurpose::ShareableSnapshot:
-        return Name::ShareableSnapshot;
-
-    case RenderingPurpose::ShareableLocalSnapshot:
-        return Name::ShareableLocalSnapshot;
-
+        return "WebKit DOM"_s;
     case RenderingPurpose::MediaPainting:
-        return Name::MediaPainting;
+        return "WebKit MediaPainting"_s;
+    case RenderingPurpose::Snapshot:
+    case RenderingPurpose::ShareableSnapshot:
+    case RenderingPurpose::ShareableLocalSnapshot:
+        return "WebKit Snapshot"_s;
+    case RenderingPurpose::Unspecified:
+        return "WebKit"_s;
+    case RenderingPurpose::BitmapOnlyLayerBacking:
+    case RenderingPurpose::LayerBacking:
+        ASSERT_NOT_REACHED("LayerBacking surfaces should use the CALayer name instead of a generic IOSurface::Name.");
+        return "WebKit LayerBacking"_s;
     }
-
-    return Name::Default;
 }
 
 TextStream& operator<<(TextStream& ts, IOSurface::Format format)
@@ -774,7 +768,7 @@ static TextStream& operator<<(TextStream& ts, SetNonVolatileResult state)
 
 TextStream& operator<<(TextStream& ts, const IOSurface& surface)
 {
-    return ts << "IOSurface " << surface.surfaceID() << " name " << [surfaceNameToNSString(surface.name()) UTF8String] << " size " << surface.size() << " format " << surface.m_format << " state " << surface.state();
+    return ts << "IOSurface " << surface.surfaceID() << " name " << /*[surfaceNameToNSString(surface.name()) UTF8String]*/surface.nameString() << " size " << surface.size() << " format " << surface.m_format << " state " << surface.state();
 }
 
 } // namespace WebCore

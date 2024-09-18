@@ -251,6 +251,7 @@ public:
     virtual void setBlendMode(BlendMode) = 0;
 
     virtual void setName(const String&) = 0;
+    virtual String name() const = 0;
 
     virtual void setSpeed(float) = 0;
 

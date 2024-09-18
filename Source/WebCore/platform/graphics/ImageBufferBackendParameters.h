@@ -39,6 +39,7 @@ struct ImageBufferBackendParameters {
     DestinationColorSpace colorSpace;
     ImageBufferPixelFormat pixelFormat;
     RenderingPurpose purpose;
+    String name;
 };
 
 } // namespace WTF

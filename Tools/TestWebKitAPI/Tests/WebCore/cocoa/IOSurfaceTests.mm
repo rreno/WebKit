@@ -35,7 +35,7 @@ namespace TestWebKitAPI {
 
 TEST(IOSurfaceTest, IsInUse)
 {
-    auto s1 = WebCore::IOSurface::create(nullptr, { 5, 5 }, WebCore::DestinationColorSpace::SRGB()); 
+    auto s1 = WebCore::IOSurface::create(nullptr, { 5, 5 }, WebCore::DestinationColorSpace::SRGB(), "WebKit Test Surface"_s); 
     EXPECT_FALSE(s1->isInUse());
     auto sendRight1 = s1->createSendRight();
     EXPECT_TRUE(s1->isInUse());
@@ -48,7 +48,7 @@ TEST(IOSurfaceTest, IsInUse)
 
 TEST(IOSurfaceTest, CreatePlatformContext)
 {
-    auto s1 = WebCore::IOSurface::create(nullptr, { 5, 5 }, WebCore::DestinationColorSpace::SRGB()); 
+    auto s1 = WebCore::IOSurface::create(nullptr, { 5, 5 }, WebCore::DestinationColorSpace::SRGB(), "WebKit Test Surface"_s); 
     EXPECT_FALSE(s1->isInUse());
     auto c1 = s1->createPlatformContext();
     auto c2 = s1->createPlatformContext();
@@ -67,16 +67,16 @@ TEST(IOSurfaceTest, IOSurfaceNames)
         auto s = WebCore::IOSurface::create(nullptr, { 5, 5 }, WebCore::DestinationColorSpace::SRGB(), WebCore::IOSurface::nameForRenderingPurpose(purpose));
         NSString *expected = @"WebKit DOM";
 
-        EXPECT_EQ(WebCore::IOSurface::Name::DOM, s->name());
+        EXPECT_EQ(String(expected), s->nameString());
         EXPECT_STREQ([expected UTF8String], [(NSString *)IOSurfaceCopyValue(s->surface(), kIOSurfaceName) UTF8String]);
     }
     {
 
         auto purpose = WebCore::RenderingPurpose::Snapshot;
         auto s = WebCore::IOSurface::create(nullptr, { 5, 5 }, WebCore::DestinationColorSpace::SRGB(), WebCore::IOSurface::nameForRenderingPurpose(purpose));
-        NSString *expected = @"WKWebView Snapshot";
+        NSString *expected = @"WebKit Snapshot";
 
-        EXPECT_EQ(WebCore::IOSurface::Name::Snapshot, s->name());
+        EXPECT_EQ(String(expected), s->nameString());
         EXPECT_STREQ([expected UTF8String], [(NSString *)IOSurfaceCopyValue(s->surface(), kIOSurfaceName) UTF8String]);
     }
 }
@@ -88,12 +88,12 @@ TEST(IOSurfacePoolTest, IOSurfacePoolNames)
     auto* pool = &WebCore::IOSurfacePool::sharedPoolSingleton();
 
     auto s1 = WebCore::IOSurface::create(nullptr, { 5, 5 }, WebCore::DestinationColorSpace::SRGB(), WebCore::IOSurface::nameForRenderingPurpose(initialPurpose));
-    EXPECT_EQ(WebCore::IOSurface::Name::ImageBufferShareableMapped, s1->name());
+    EXPECT_EQ("WebKit ImageBuffer"_s, s1->nameString());
 
     pool->addSurface(WTFMove(s1));
 
     auto s2 = WebCore::IOSurface::create(pool, { 5, 5 }, WebCore::DestinationColorSpace::SRGB(), WebCore::IOSurface::nameForRenderingPurpose(purpose));
-    EXPECT_EQ(WebCore::IOSurface::Name::Canvas, s2->name());
+    EXPECT_EQ("WebKit Canvas"_s, s2->nameString());
 }
 
 }

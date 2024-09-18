@@ -355,6 +355,7 @@ void RemoteLayerTreeDrawingArea::updateRendering()
         flags.add(FinalizeRenderingUpdateFlags::InvalidateImagesWithAsyncDecodes);
 
     webPage->finalizeRenderingUpdate(flags);
+    WTFLogAlways("WebPage::pageScaleFactor: %.3f Page::pageScaleFactor: %.3f", webPage->pageScaleFactor(), webPage->corePage() ? webPage->corePage()->pageScaleFactor() : 0.0);
 
     willStartRenderingUpdateDisplay();
 

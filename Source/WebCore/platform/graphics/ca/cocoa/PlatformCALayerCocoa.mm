@@ -933,6 +933,11 @@ void PlatformCALayerCocoa::setName(const String& value)
     END_BLOCK_OBJC_EXCEPTIONS
 }
 
+String PlatformCALayerCocoa::name() const
+{
+    return [m_layer name];
+}
+
 void PlatformCALayerCocoa::setSpeed(float value)
 {
     BEGIN_BLOCK_OBJC_EXCEPTIONS

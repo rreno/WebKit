@@ -433,6 +433,7 @@ Vector<SwapBuffersDisplayRequirement> RemoteRenderingBackendProxy::prepareImageB
             perLayerData.supportsPartialRepaint,
             perLayerData.hasEmptyDirtyRegion,
             perLayerData.requiresClearedPixels,
+            perLayerData.name,
         };
     });
 

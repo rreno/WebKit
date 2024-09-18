@@ -424,7 +424,7 @@ bool GraphicsContextGLCocoa::bindNextDrawingBuffer()
         return false;
     }
     if (!buffer) {
-        auto surface = IOSurface::create(nullptr, getInternalFramebufferSize(), m_drawingBufferColorSpace, IOSurface::Name::GraphicsContextGL);
+        auto surface = IOSurface::create(nullptr, getInternalFramebufferSize(), m_drawingBufferColorSpace, IOSurface::Name::WebGL);
         if (!surface)
             return false;
         if (m_resourceOwner)
