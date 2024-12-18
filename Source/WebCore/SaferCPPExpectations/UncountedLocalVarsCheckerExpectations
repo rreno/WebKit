@@ -668,6 +668,7 @@ page/VisitedLinkStore.cpp
 page/VisualViewport.cpp
 page/WindowOrWorkerGlobalScope.cpp
 page/WorkerNavigator.cpp
+page/cocoa/PageCocoa.mm
 page/cocoa/ResourceUsageOverlayCocoa.mm
 page/cocoa/ResourceUsageThreadCocoa.mm
 page/cocoa/WebTextIndicatorLayer.mm
@@ -675,7 +676,6 @@ page/csp/ContentSecurityPolicy.cpp
 page/csp/ContentSecurityPolicyDirectiveList.cpp
 page/mac/EventHandlerMac.mm
 page/mac/ImageOverlayControllerMac.mm
-page/mac/PageMac.mm
 page/mac/ServicesOverlayController.mm
 page/scrolling/AsyncScrollingCoordinator.cpp
 page/scrolling/ScrollAnchoringController.cpp
