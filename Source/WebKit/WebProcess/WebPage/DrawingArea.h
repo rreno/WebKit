@@ -196,6 +196,11 @@ public:
     void prepopulateRectForZoom(double scale, WebCore::FloatPoint origin);
     void setShouldScaleViewToFitDocument(bool);
     void scaleViewToFitDocumentIfNeeded();
+
+#if PLATFORM(IOS_FAMILY)
+    virtual void willStartUserTriggeredZooming() { }
+    virtual void didEndUserTriggeredZooming() { }
+#endif
     
     static RetainPtr<CABasicAnimation> transientZoomSnapAnimationForKeyPath(ASCIILiteral);
 

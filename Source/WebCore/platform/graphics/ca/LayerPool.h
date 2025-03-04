@@ -38,6 +38,12 @@
 #include <wtf/Vector.h>
 
 namespace WebCore {
+
+class LayerPoolClient {
+public:
+    virtual ~LayerPoolClient() = default;
+    virtual void didDrainLayerPool() = 0;
+};
     
 class LayerPool final : public CanMakeCheckedPtr<LayerPool> {
     WTF_MAKE_TZONE_ALLOCATED_EXPORT(LayerPool, WEBCORE_EXPORT);
@@ -45,6 +51,7 @@ class LayerPool final : public CanMakeCheckedPtr<LayerPool> {
     WTF_MAKE_NONCOPYABLE(LayerPool);
 public:
     WEBCORE_EXPORT LayerPool();
+    WEBCORE_EXPORT explicit LayerPool(LayerPoolClient&);
     WEBCORE_EXPORT ~LayerPool();
 
     static UncheckedKeyHashSet<CheckedPtr<LayerPool>>& allLayerPools();
@@ -80,6 +87,7 @@ private:
     Timer m_pruneTimer;
 
     MonotonicTime m_lastAddTime;
+    LayerPoolClient *m_client;
 };
 
 }

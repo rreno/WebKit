@@ -65,6 +65,11 @@ public:
 
     void gpuProcessConnectionWasDestroyed();
 
+#if PLATFORM(IOS_FAMILY)
+    void willStartUserTriggeredZooming() final;
+    void didEndUserTriggeredZooming() final;
+#endif
+
 protected:
     RemoteLayerTreeDrawingArea(WebPage&, const WebPageCreationParameters&);
 
@@ -197,6 +202,7 @@ private:
     std::optional<WebCore::FramesPerSecond> m_preferredFramesPerSecond;
     Seconds m_preferredRenderingUpdateInterval;
     bool m_isScheduled { false };
+    WebCore::PlatformCALayer::LayerCachingPolicy m_layerCachingPolicy { WebCore::PlatformCALayer::LayerCachingPolicy::Cache };
 };
 
 inline bool RemoteLayerTreeDrawingArea::addMilestonesToDispatch(OptionSet<WebCore::LayoutMilestone> paintMilestones)

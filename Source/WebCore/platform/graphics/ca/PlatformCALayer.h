@@ -122,6 +122,8 @@ public:
     };
     virtual Type type() const = 0;
 
+    enum class LayerCachingPolicy : bool { DoNotCache, Cache };
+
     // This function passes the layer as a void* rather than a PlatformLayer because PlatformLayer
     // is defined differently for Obj C and C++. This allows callers from both languages.
     static RefPtr<PlatformCALayer> platformCALayerForLayer(void* platformLayer);
@@ -365,6 +367,7 @@ protected:
     PlatformCALayer(LayerType, PlatformCALayerClient* owner);
 
     virtual LayerPool* layerPool();
+    virtual LayerCachingPolicy layerCachingPolicy() const { return LayerCachingPolicy::Cache; }
 
     const LayerType m_layerType;
     const PlatformLayerIdentifier m_layerID;

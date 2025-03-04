@@ -198,8 +198,12 @@ ContentsFormat PlatformCALayer::contentsFormatForLayer(Widget* widget, PlatformC
 void PlatformCALayer::moveToLayerPool()
 {
     ASSERT(!superlayer());
-    if (auto pool = layerPool())
-        pool->addLayer(this);
+    if (layerCachingPolicy() == LayerCachingPolicy::Cache) {
+        if (auto pool = layerPool()) {
+            ALWAYS_LOG_WITH_STREAM(stream << "PlatformCALayer::moveToLayerPool moving layer " << layerID() << " to pool.\n");
+            pool->addLayer(this);
+        }
+    }
 }
 
 LayerPool* PlatformCALayer::layerPool()

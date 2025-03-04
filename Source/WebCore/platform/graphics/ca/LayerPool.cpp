@@ -27,8 +27,16 @@
 #include "LayerPool.h"
 
 #include "Logging.h"
+#include <wtf/MemoryFootprint.h>
 #include <wtf/NeverDestroyed.h>
 #include <wtf/TZoneMallocInlines.h>
+
+#define ENABLE_LAYER_POOL_STATISTICS 1
+#if ENABLE(LAYER_POOL_STATISTICS)
+#define DUMP_POOL_STATISTICS(commands) do { ALWAYS_LOG_WITH_STREAM(commands); } while(0)
+#else
+#efine DUMP_POOL_STATISTICS(commands) ((void)0)
+#endif
 
 namespace WebCore {
 
@@ -39,6 +47,15 @@ static constexpr Seconds capacityDecayTime { 5_s };
 LayerPool::LayerPool()
     : m_maxBytesForPool(48 * 1024 * 1024)
     , m_pruneTimer(*this, &LayerPool::pruneTimerFired)
+{
+    RELEASE_ASSERT(isMainThread());
+    allLayerPools().add(this);
+}
+
+LayerPool::LayerPool(LayerPoolClient& client)
+    : m_maxBytesForPool(48 * 1024 * 1024)
+    , m_pruneTimer(*this, &LayerPool::pruneTimerFired)
+    , m_client(&client)
 {
     RELEASE_ASSERT(isMainThread());
     allLayerPools().add(this);
@@ -79,11 +96,14 @@ void LayerPool::addLayer(const RefPtr<PlatformCALayer>& layer)
 {
     RELEASE_ASSERT(isMainThread());
     IntSize layerSize(expandedIntSize(layer->bounds().size()));
-    if (!canReuseLayerWithSize(layerSize))
+    if (!canReuseLayerWithSize(layerSize)) {
+        DUMP_POOL_STATISTICS(stream << "LayerPool::addLayer - unable to add layer to pool with size " << layerSize << "\n");
         return;
+    }
 
     listOfLayersWithSize(layerSize).prepend(layer);
     m_totalBytes += backingStoreBytesForSize(layerSize);
+    DUMP_POOL_STATISTICS(stream << "LayerPool::addLayer - added layer to pool with size " << layerSize << " (" << backingStoreBytesForSize(layerSize) << " bytes, total footprint: " << memoryFootprint() / (1024 * 1024) << " MB)\n");
     
     m_lastAddTime = MonotonicTime::now();
     schedulePrune();
@@ -91,13 +111,19 @@ void LayerPool::addLayer(const RefPtr<PlatformCALayer>& layer)
 
 RefPtr<PlatformCALayer> LayerPool::takeLayerWithSize(const IntSize& size)
 {
+    auto footprint = memoryFootprint() / (1024 * 1024);
     RELEASE_ASSERT(isMainThread());
-    if (!canReuseLayerWithSize(size))
+    if (!canReuseLayerWithSize(size)) {
+        DUMP_POOL_STATISTICS(stream << "LayerPool::takeLayerWithSize - unable to cache layers with size " << size << "(footprint: " << footprint << " MB )\n");
         return nullptr;
+    }
     LayerList& reuseList = listOfLayersWithSize(size, MarkAsUsed);
-    if (reuseList.isEmpty())
+    if (reuseList.isEmpty()) {
+        DUMP_POOL_STATISTICS(stream << "LayerPool::takeLayerWithSize - no layers in cache matching size " << size << "(footprint: " << footprint << " MB )\n");
         return nullptr;
+    }
     m_totalBytes -= backingStoreBytesForSize(size);
+    DUMP_POOL_STATISTICS(stream << "LayerPool::takeLayerWithSize - taking layer (" << reuseList.first()->layerID() << ") with size " << size << " (" << backingStoreBytesForSize(size) << " bytes footprint: " << footprint << " MB )\n");
     return reuseList.takeFirst();
 }
     
@@ -150,6 +176,10 @@ void LayerPool::drain()
     m_reuseLists.clear();
     m_sizesInPruneOrder.clear();
     m_totalBytes = 0;
+    if (m_client)
+        m_client->didDrainLayerPool();
 }
 
 }
+
+#undef ENABLE_LAYER_POOL_STATISTICS

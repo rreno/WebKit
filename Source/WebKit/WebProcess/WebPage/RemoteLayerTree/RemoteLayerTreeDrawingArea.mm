@@ -321,21 +321,27 @@ void RemoteLayerTreeDrawingArea::updateRendering()
 {
     if (m_isRenderingSuspended) {
         m_hasDeferredRenderingUpdate = true;
+        WTFLogAlways("RemoteLayerTreeDrawingArea::updateRendering: Bailing. Rendering is suspended.\n");
         return;
     }
 
     if (m_waitingForBackingStoreSwap) {
         m_deferredRenderingUpdateWhileWaitingForBackingStoreSwap = true;
+//        WTFLogAlways("RemoteLayerTreeDrawingArea::updateRendering: Bailing. Waiting for backing store swap.\n");
         return;
     }
 
     // This function is not reentrant, e.g. a rAF callback may force repaint.
-    if (m_inUpdateRendering)
+    if (m_inUpdateRendering) {
+        WTFLogAlways("RemoteLayerTreeDrawingArea::updateRendering: Bailing. updateRendering already on the call stack.\n");
         return;
+    }
 
     Ref webPage = m_webPage.get();
-    if (!webPage->hasRootFrames())
+    if (!webPage->hasRootFrames()) {
+        WTFLogAlways("RemoteLayerTreeDrawingArea::updateRendering: Bailing. WebPage does not have root frames.\n");
         return;
+    }
 
     scaleViewToFitDocumentIfNeeded();
 
@@ -405,6 +411,10 @@ void RemoteLayerTreeDrawingArea::updateRendering()
         backingStoreCollection->willCommitLayerTree(transaction.first);
 
     auto commitEncoder = makeUniqueRef<IPC::Encoder>(Messages::RemoteLayerTreeDrawingAreaProxy::CommitLayerTree::name(), m_identifier.toUInt64());
+    for (const auto& transaction : transactions) {
+        for (const auto& layerID : transaction.first.destroyedLayers())
+            WTFLogAlways("Destroying %s\n", layerID.toString().utf8().data());
+    }
     commitEncoder.get() << transactions;
 
     Vector<std::unique_ptr<ThreadSafeImageBufferSetFlusher>> flushers;
@@ -587,5 +597,20 @@ void RemoteLayerTreeDrawingArea::renderingUpdateFramesPerSecondChanged()
     m_preferredFramesPerSecond = preferredFramesPerSecond;
     m_preferredRenderingUpdateInterval = page->preferredRenderingUpdateInterval();
 }
+
+#if PLATFORM(IOS_FAMILY)
+void RemoteLayerTreeDrawingArea::willStartUserTriggeredZooming()
+{
+    WTFLogAlways("RemoteLayerTreeDrawingArea::willStartUserTriggeredZooming\n");
+    m_remoteLayerTreeContext->setLayerCachingPolicy(PlatformCALayer::LayerCachingPolicy::DoNotCache);
+}
+
+void RemoteLayerTreeDrawingArea::didEndUserTriggeredZooming()
+{
+    WTFLogAlways("RemoteLayerTreeDrawingArea::didEndUserTriggeredZooming\n");
+    m_remoteLayerTreeContext->setLayerCachingPolicy(PlatformCALayer::LayerCachingPolicy::Cache);
+}
+
+#endif
 
 } // namespace WebKit

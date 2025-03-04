@@ -97,6 +97,9 @@ void RemoteLayerTreeDrawingAreaProxy::removeRemotePageDrawingAreaProxy(RemotePag
 
 std::unique_ptr<RemoteLayerTreeHost> RemoteLayerTreeDrawingAreaProxy::detachRemoteLayerTreeHost()
 {
+    WTFLogAlways("Detaching remote layer tree host.\n");
+    for (const auto& layerID : m_remoteLayerTreeHost->nodesForDebugging())
+        WTFLogAlways("Detaching node %s\n", layerID.toString().utf8().data());
     m_remoteLayerTreeHost->detachFromDrawingArea();
     return WTFMove(m_remoteLayerTreeHost);
 }
@@ -234,6 +237,7 @@ void RemoteLayerTreeDrawingAreaProxy::commitLayerTreeNotTriggered(IPC::Connectio
         return;
     }
 
+    WTFLogAlways("RemoteLayerTreeDrawingAreaProxy::commitLayerTreeNotTriggered: Moving to Idle.\n");
     state.commitLayerTreeMessageState = Idle;
 
     maybePauseDisplayRefreshCallbacks();
@@ -277,6 +281,8 @@ void RemoteLayerTreeDrawingAreaProxy::commitLayerTree(IPC::Connection& connectio
     WeakPtr weakThis { *this };
 
     for (auto& transaction : transactions) {
+        for (const auto& layerID : transaction.first.destroyedLayers())
+            WTFLogAlways("\tDestroyed %s\n", layerID.toString().utf8().data());
         commitLayerTreeTransaction(connection, transaction.first, transaction.second);
         if (!weakThis)
             return;

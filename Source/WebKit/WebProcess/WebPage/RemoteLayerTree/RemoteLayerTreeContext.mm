@@ -52,6 +52,7 @@ WTF_MAKE_TZONE_ALLOCATED_IMPL(RemoteLayerTreeContext);
 RemoteLayerTreeContext::RemoteLayerTreeContext(WebPage& webPage)
     : m_webPage(webPage)
     , m_backingStoreCollection(makeUniqueRefWithoutRefCountedCheck<RemoteLayerBackingStoreCollection>(*this))
+    , m_layerPool(*this)
 {
 }
 
@@ -61,6 +62,11 @@ RemoteLayerTreeContext::~RemoteLayerTreeContext()
     m_livePlatformLayers.clear();
     m_liveGraphicsLayers.clear();
     m_layersWithAnimations.clear();
+    if (m_destroyedLayers.size()) {
+        WTFLogAlways("RemoteLayerTreeContext (dtor): Pending destroyed layers.\n");
+        for (const auto& layerID : m_destroyedLayers)
+            WTFLogAlways("Leaked layer: %s\n", layerID.toString().utf8().data());
+    }
 }
 
 void RemoteLayerTreeContext::adoptLayersFromContext(RemoteLayerTreeContext& oldContext)
@@ -147,6 +153,12 @@ WebPage& RemoteLayerTreeContext::webPage()
 Ref<WebPage> RemoteLayerTreeContext::protectedWebPage()
 {
     return m_webPage.get();
+}
+
+void RemoteLayerTreeContext::didDrainLayerPool()
+{
+    if (RefPtr protectedCorePage = protectedWebPage()->corePage())
+        protectedCorePage->scheduleRenderingUpdate(RenderingUpdateStep::LayerFlush);
 }
 
 void RemoteLayerTreeContext::layerWillLeaveContext(PlatformCALayerRemote& layer)

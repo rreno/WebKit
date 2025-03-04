@@ -375,9 +375,23 @@ void RemoteLayerTreeHost::animationDidEnd(std::optional<WebCore::PlatformLayerId
         protectedDrawingArea()->acceleratedAnimationDidEnd(*layerID, animationKey);
 }
 
+void RemoteLayerTreeHost::dumpNodes() const
+{
+    for (const auto& [layerID, _] : m_nodes)
+        WTFLogAlways("LayerTree(0x%" PRIuPTR ") has node: %s", this, layerID.toString().utf8().data());
+}
+
 void RemoteLayerTreeHost::detachFromDrawingArea()
 {
     m_drawingArea = nullptr;
+}
+
+Vector<WebCore::PlatformLayerIdentifier> RemoteLayerTreeHost::nodesForDebugging() const
+{
+    Vector<WebCore::PlatformLayerIdentifier> nodes;
+    for (const auto& [layerID, _] : m_nodes)
+        nodes.append(layerID);
+    return nodes;
 }
 
 void RemoteLayerTreeHost::clearLayers()

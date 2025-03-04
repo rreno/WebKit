@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2023 Apple Inc. All rights reserved.
+ * Copyright (C) 2012-2025 Apple Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -48,7 +48,7 @@ class WebFrame;
 class WebPage;
 
 // FIXME: This class doesn't do much now. Roll into RemoteLayerTreeDrawingArea?
-class RemoteLayerTreeContext : public RefCountedAndCanMakeWeakPtr<RemoteLayerTreeContext>, public WebCore::GraphicsLayerFactory {
+class RemoteLayerTreeContext : public RefCountedAndCanMakeWeakPtr<RemoteLayerTreeContext>, public WebCore::GraphicsLayerFactory, public WebCore::LayerPoolClient {
     WTF_MAKE_TZONE_ALLOCATED(RemoteLayerTreeContext);
 public:
     static Ref<RemoteLayerTreeContext> create(WebPage& webpage)
@@ -68,6 +68,10 @@ public:
     void graphicsLayerWillLeaveContext(GraphicsLayerCARemote&);
 
     WebCore::LayerPool& layerPool() { return m_layerPool; }
+    void didDrainLayerPool() final;
+
+    WebCore::PlatformCALayer::LayerCachingPolicy layerCachingPolicy() const { return m_layerCachingPolicy; }
+    void setLayerCachingPolicy(WebCore::PlatformCALayer::LayerCachingPolicy newPolicy) { m_layerCachingPolicy = newPolicy; }
 
     float deviceScaleFactor() const;
 
@@ -131,6 +135,7 @@ private:
     UniqueRef<RemoteLayerBackingStoreCollection> m_backingStoreCollection;
 
     WebCore::LayerPool m_layerPool;
+    WebCore::PlatformCALayer::LayerCachingPolicy m_layerCachingPolicy { WebCore::PlatformCALayer::LayerCachingPolicy::Cache };
 
     CheckedPtr<RemoteLayerTreeTransaction> m_currentTransaction;
 

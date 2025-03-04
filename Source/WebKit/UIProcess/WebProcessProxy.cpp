@@ -47,6 +47,7 @@
 #include "ProcessTerminationReason.h"
 #include "ProvisionalFrameProxy.h"
 #include "ProvisionalPageProxy.h"
+#include "RemoteLayerTreeDrawingAreaProxy.h"
 #include "RemotePageProxy.h"
 #include "RemoteWorkerType.h"
 #include "ServiceWorkerNotificationHandler.h"
@@ -101,6 +102,7 @@
 #include <WebCore/SuddenTermination.h>
 #include <WebCore/WrappedCryptoKey.h>
 #include <optional>
+#include <pal/Logging.h>
 #include <pal/system/Sound.h>
 #include <stdio.h>
 #include <wtf/Algorithms.h>
@@ -487,6 +489,15 @@ void WebProcessProxy::initializeWebProcess(WebProcessCreationParameters&& parame
         if (RefPtr protectedThis = weakThis.get())
             protectedThis->m_processIdentity = WTFMove(processIdentity);
     }, 0);
+    PAL::registerNotifyCallback("com.apple.WebKit.showRemoteLayerTreeNodes"_s, [weakThis = WeakPtr { *this } ] {
+        Vector<Ref<WebPageProxy>> webPages;
+        if (RefPtr protectedThis = weakThis.get())
+            webPages = protectedThis->pages();
+        for (const auto& webPage : webPages) {
+            if (auto* da = dynamicDowncast<RemoteLayerTreeDrawingAreaProxy>(webPage->drawingArea()))
+                da->remoteLayerTreeHost().dumpNodes();
+        }
+    });
 }
 
 void WebProcessProxy::initializePreferencesForGPUAndNetworkProcesses(const WebPageProxy& page)

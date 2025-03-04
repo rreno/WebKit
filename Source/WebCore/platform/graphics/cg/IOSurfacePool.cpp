@@ -38,7 +38,7 @@
 static const Seconds collectionInterval { 500_ms };
 static const Seconds surfaceAgeBeforeMarkingPurgeable { 2_s };
 
-#define ENABLE_IOSURFACE_POOL_STATISTICS 0
+#define ENABLE_IOSURFACE_POOL_STATISTICS 1
 #if ENABLE_IOSURFACE_POOL_STATISTICS
 #define DUMP_POOL_STATISTICS(commands) do { ALWAYS_LOG_WITH_STREAM(commands); } while (0);
 #else

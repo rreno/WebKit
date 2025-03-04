@@ -293,6 +293,7 @@ private:
     bool requiresCustomAppearanceUpdateOnBoundsChange() const;
 
     WebCore::LayerPool* layerPool() override;
+    WebCore::PlatformCALayer::LayerCachingPolicy layerCachingPolicy() const override;
 
     LayerProperties m_properties;
     WebCore::PlatformCALayerList m_children;

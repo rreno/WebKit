@@ -139,8 +139,11 @@ PlatformCALayerRemote::~PlatformCALayerRemote()
     for (const auto& layer : m_children)
         downcast<PlatformCALayerRemote>(*layer).m_superlayer = nullptr;
 
-    if (RefPtr<RemoteLayerTreeContext> protectedContext = m_context.get())
+    if (RefPtr<RemoteLayerTreeContext> protectedContext = m_context.get()) {
+        WTFLogAlways("~PlatformCALayerRemote: Destroying layer %s\n", layerID().toString().utf8().data());
         protectedContext->layerWillLeaveContext(*this);
+    } else
+        WTFLogAlways("Layer %s being destroyed with null context.\n", layerID().toString().utf8().data());
 }
 
 void PlatformCALayerRemote::moveToContext(RemoteLayerTreeContext& context)
@@ -1164,6 +1167,11 @@ unsigned PlatformCALayerRemote::backingStoreBytesPerPixel() const
 LayerPool* PlatformCALayerRemote::layerPool()
 {
     return m_context ? &m_context->layerPool() : nullptr;
+}
+
+PlatformCALayer::LayerCachingPolicy PlatformCALayerRemote::layerCachingPolicy() const
+{
+    return m_context ? m_context->layerCachingPolicy() : PlatformCALayer::LayerCachingPolicy::DoNotCache;
 }
 
 #if ENABLE(THREADED_ANIMATION_RESOLUTION)

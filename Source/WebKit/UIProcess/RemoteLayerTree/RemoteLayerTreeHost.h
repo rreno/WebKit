@@ -65,6 +65,8 @@ public:
 
     RemoteLayerTreeDrawingAreaProxy& drawingArea() const;
 
+    void dumpNodes() const;
+
     // Returns true if the root layer changed.
     bool updateLayerTree(const IPC::Connection&, const RemoteLayerTreeTransaction&, float indicatorScaleFactor  = 1);
     void asyncSetLayerContents(WebCore::PlatformLayerIdentifier, ImageBufferBackendHandle&&, const WebCore::RenderingResourceIdentifier&);
@@ -106,6 +108,7 @@ public:
 #endif
 
     void remotePageProcessDidTerminate(WebCore::ProcessIdentifier);
+    Vector<WebCore::PlatformLayerIdentifier> nodesForDebugging() const;
 
 private:
     Ref<RemoteLayerTreeDrawingAreaProxy> protectedDrawingArea() const;

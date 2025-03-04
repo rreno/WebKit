@@ -5183,6 +5183,18 @@ void WebPage::updateLayoutViewportHeightExpansionTimerFired()
     }
 }
 
+static bool shouldUseDynamicLayerCachingPolicy()
+{
+    static std::once_flag once;
+    static bool shouldUsePolicy = false;
+    std::call_once(once, ^ {
+        auto shouldUse = getenv("enableDynamicLayerCachingPolicy");
+        if (shouldUse && (strncasecmp(shouldUse, "yes", 3) || strncasecmp(shouldUse, "1", 1) || strncasecmp(shouldUse, "true", 4)))
+            shouldUsePolicy = true;
+    });
+    return shouldUsePolicy;
+}
+
 void WebPage::willStartUserTriggeredZooming()
 {
 #if ENABLE(PDF_PLUGIN)
@@ -5192,6 +5204,10 @@ void WebPage::willStartUserTriggeredZooming()
 
     m_page->diagnosticLoggingClient().logDiagnosticMessage(DiagnosticLoggingKeys::webViewKey(), DiagnosticLoggingKeys::userZoomActionKey(), ShouldSample::No);
     m_userHasChangedPageScaleFactor = true;
+    if (shouldUseDynamicLayerCachingPolicy()) {
+        if (RefPtr protectedDrawingArea = drawingArea())
+            protectedDrawingArea->willStartUserTriggeredZooming();
+    }
 }
 
 void WebPage::didEndUserTriggeredZooming()
@@ -5200,6 +5216,11 @@ void WebPage::didEndUserTriggeredZooming()
     if (RefPtr pluginView = mainFramePlugIn())
         pluginView->didEndMagnificationGesture();
 #endif
+
+    if (shouldUseDynamicLayerCachingPolicy()) {
+        if (RefPtr protectedDrawingArea = drawingArea())
+            protectedDrawingArea->didEndUserTriggeredZooming();
+    }
 }
 
 #if ENABLE(IOS_TOUCH_EVENTS)
